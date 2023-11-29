@@ -22,13 +22,14 @@ jobs:
   deploy:
     name: Deploy to Kubernates
     runs-on: ubuntu-latest
+    needs: build_and_publish
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Create Kubeconfig
         run: |
           mkdir -p ~/.kube
-          echo ${{ secrets.KUBE_CONFIG }} | base64 --decode > ~/.kube/config
+          cat ${{ secrets.KUBE_CONFIG }} >> ~/.kube/config
           cat ~/.kube/config
       - name: Use context
         run: kubectl config use-context default
