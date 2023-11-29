@@ -29,7 +29,7 @@ jobs:
       - name: Create Kubeconfig
         run: |
           mkdir -p ~/.kube
-          cat ${{ secrets.KUBE_CONFIG }} >> ~/.kube/config
+          echo "${{ secrets.KUBE_CONFIG }}" > ~/.kube/config
           cat ~/.kube/config
       - name: Use context
         run: kubectl config use-context default
