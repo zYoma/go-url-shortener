@@ -5,7 +5,6 @@ import (
 	"io"
 	"math/rand"
 	"net/http"
-	"time"
 )
 
 var urlStore map[string]string
@@ -16,7 +15,7 @@ func init() {
 
 func generateShortURL() string {
 	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-	rand.Seed(time.Now().UnixNano())
+
 	shortURL := make([]byte, 6)
 	for i := range shortURL {
 		shortURL[i] = letters[rand.Intn(len(letters))]
@@ -24,7 +23,7 @@ func generateShortURL() string {
 	return string(shortURL)
 }
 
-func createUrl(res http.ResponseWriter, req *http.Request) {
+func createURL(res http.ResponseWriter, req *http.Request) {
 	id := req.URL.Path[len("/"):]
 
 	if req.Method == http.MethodPost {
@@ -63,7 +62,7 @@ func createUrl(res http.ResponseWriter, req *http.Request) {
 
 func main() {
 	mux := http.NewServeMux()
-	mux.HandleFunc(`/`, createUrl)
+	mux.HandleFunc(`/`, createURL)
 
 	err := http.ListenAndServe(`:8080`, mux)
 	if err != nil {
