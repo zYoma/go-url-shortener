@@ -1,0 +1,38 @@
+name: ci/cd
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  build_and_publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Buils and push image
+        run: |
+          docker login --username zYoma --password ${{ secrets.GH_TOKEN }} ghcr.io
+          pwd
+          ls -la
+          docker build . -t ghcr.io/zyoma/go-url-shortener:latest
+          docker push ghcr.io/zyoma/go-url-shortener:latest
+    
+  deploy:
+    name: Deploy to Kubernates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Create Kubeconfig
+        run: |
+          mkdir ${HOME}/.kube
+          echo ${{ secrets.KUBE_CONFIG }} | base64 --decode > ${HOME}/.kube/config
+          cat ${HOME}/.kube/config
+      - name: Use context
+        run: kubectl config use-context default
+      - name: Deploy
+        run: |
+          kubectl apply -f deploy/
+          kubectl rollout restart deploy backend
