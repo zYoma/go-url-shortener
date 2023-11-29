@@ -14,8 +14,6 @@ jobs:
       - name: Buils and push image
         run: |
           docker login --username zYoma --password ${{ secrets.GH_TOKEN }} ghcr.io
-          pwd
-          ls -la
           docker build . -t ghcr.io/zyoma/go-url-shortener:latest
           docker push ghcr.io/zyoma/go-url-shortener:latest
     
@@ -29,7 +27,7 @@ jobs:
       - name: Create Kubeconfig
         run: |
           mkdir -p ~/.kube
-          echo "${{ secrets.KUBE_CONFIG }}" | base64 --decode > ~/.kube/config
+          echo "${{ secrets.KUBE_CONFIG }}" > ~/.kube/config
           cat ~/.kube/config
       - name: Use context
         run: kubectl config use-context default
