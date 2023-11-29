@@ -6,13 +6,7 @@ metadata:
   labels:
     app: backend
 spec:
-  replicas: 2
-  revisionHistoryLimit: 15
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 1
-      maxSurge: 20%
+  replicas: 1
   selector:
     matchLabels:
       app: backend
@@ -25,12 +19,6 @@ spec:
         - name: backend
           image: ghcr.io/zyoma/go-url-shortener:latest
           imagePullPolicy: Always
-          resources:
-            limits:
-              memory: 1Gi
-            requests:
-              cpu: "250m"
-              memory: "128Mi"
           ports:
             - name: backend
               containerPort: 8080
