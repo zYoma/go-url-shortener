@@ -14,6 +14,8 @@ jobs:
       - name: Buils and push image
         run: |
           docker login --username zYoma --password ${{ secrets.GH_TOKEN }} ghcr.io
+          pwd
+          ls -la
           docker build . -t ghcr.io/zyoma/go-url-shortener:latest
           docker push ghcr.io/zyoma/go-url-shortener:latest
     
