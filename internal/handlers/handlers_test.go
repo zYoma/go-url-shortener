@@ -9,7 +9,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"github.com/zYoma/go-url-shortener/internal/handlers"
 )
 
 func TestCreateURL(t *testing.T) {
@@ -45,7 +44,7 @@ func TestCreateURL(t *testing.T) {
 			request := httptest.NewRequest(http.MethodPost, "/", bodyReader)
 			// создаём новый Recorder
 			w := httptest.NewRecorder()
-			handlers.CreateURL(w, request)
+			CreateURL(w, request)
 
 			res := w.Result()
 			// проверяем код ответа
@@ -106,7 +105,7 @@ func TestGetURL(t *testing.T) {
 			// создаём новый Recorder
 			ww := httptest.NewRecorder()
 
-			handlers.GetURL(ww, request, tt.want.query)
+			GetURL(ww, request, tt.want.query)
 
 			res := ww.Result()
 			// проверяем код ответа
