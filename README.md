@@ -1,3 +1,4 @@
+[![ci/cd](https://github.com/zYoma/go-url-shortener/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/zYoma/go-url-shortener/actions/workflows/deploy.yml)
 # go-musthave-shortener-tpl
 
 Шаблон репозитория для трека «Сервис сокращения URL».
