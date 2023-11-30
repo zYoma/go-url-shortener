@@ -1,3 +1,5 @@
+[![go vet test](https://github.com/zYoma/go-url-shortener/actions/workflows/statictest.yml/badge.svg?branch=main)](https://github.com/zYoma/go-url-shortener/actions/workflows/statictest.yml)
+[![autotests](https://github.com/zYoma/go-url-shortener/actions/workflows/shortenertest.yml/badge.svg?branch=main)](https://github.com/zYoma/go-url-shortener/actions/workflows/shortenertest.yml)
 [![ci/cd](https://github.com/zYoma/go-url-shortener/actions/workflows/deploy.yml/badge.svg?branch=main)](https://github.com/zYoma/go-url-shortener/actions/workflows/deploy.yml)
 # go-musthave-shortener-tpl
 
