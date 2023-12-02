@@ -16,7 +16,7 @@ import (
 func TestCreateURL(t *testing.T) {
 	provider := mem.New()
 	handler := func(w http.ResponseWriter, req *http.Request) {
-		CreateURL(w, req, provider)
+		CreateURL(w, req, provider, "http://localhost:8080")
 	}
 	srv := httptest.NewServer(http.HandlerFunc(handler))
 	defer srv.Close()

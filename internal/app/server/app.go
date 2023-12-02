@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -9,24 +8,18 @@ import (
 
 type App struct {
 	server *http.Server
-	host   string
-	port   int
-	router chi.Router
 }
 
 func New(
-	host string,
-	port int,
+	address string,
 	router chi.Router,
 ) *App {
 	server := &http.Server{
-		Addr:    fmt.Sprintf("%s:%d", host, port),
+		Addr:    address,
 		Handler: router,
 	}
 	return &App{
 		server: server,
-		host:   host,
-		port:   port,
 	}
 }
 

@@ -7,11 +7,13 @@ import (
 	"syscall"
 
 	"github.com/zYoma/go-url-shortener/internal/app"
+	"github.com/zYoma/go-url-shortener/internal/config"
 )
 
 func main() {
+	flagRunAddr, flagBaseShortURL := config.ParseFlags()
 	// инициализация приложения
-	application := app.New()
+	application := app.New(flagRunAddr, flagBaseShortURL)
 
 	// запустить сервис
 	go application.Server.MustRun()
