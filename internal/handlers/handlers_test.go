@@ -1,121 +1,92 @@
 package handlers
 
 import (
-	"bytes"
-	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/zYoma/go-url-shortener/internal/storage/mem"
 )
 
 func TestCreateURL(t *testing.T) {
-	type want struct {
-		body     string
-		code     int
-		response string
+	provider := mem.New()
+	handler := func(w http.ResponseWriter, req *http.Request) {
+		CreateURL(w, req, provider)
 	}
-	tests := []struct {
-		name string
-		want want
-	}{
-		{
-			name: "positive test #1",
-			want: want{
-				body:     "http://ya.ru",
-				code:     201,
-				response: `http://localhost:8080/`,
-			},
-		},
-		{
-			name: "empty body",
-			want: want{
-				body:     "",
-				code:     400,
-				response: `URL cannot be empty`,
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			bodyReader := bytes.NewReader([]byte(tt.want.body))
-			request := httptest.NewRequest(http.MethodPost, "/", bodyReader)
-			// создаём новый Recorder
-			w := httptest.NewRecorder()
-			CreateURL(w, request)
+	srv := httptest.NewServer(http.HandlerFunc(handler))
+	defer srv.Close()
 
-			res := w.Result()
-			// проверяем код ответа
-			assert.Equal(t, tt.want.code, res.StatusCode)
-			// получаем и проверяем тело запроса
-			defer res.Body.Close()
-			resBody, err := io.ReadAll(res.Body)
+	testCases := []struct {
+		method       string
+		body         string
+		expectedCode int
+		expectedBody string
+	}{
+		{method: http.MethodPost, body: "http://ya.ru", expectedCode: http.StatusCreated, expectedBody: "http://localhost:8080/"},
+		{method: http.MethodPost, body: "", expectedCode: http.StatusBadRequest, expectedBody: "URL cannot be empty"},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.method, func(t *testing.T) {
+			req := resty.New().R()
+			req.Method = tc.method
+			req.URL = srv.URL
+			req.SetBody(tc.body)
+
+			resp, err := req.Send()
 
 			require.NoError(t, err)
-			assert.Contains(t, string(resBody), tt.want.response, "ответ не содержит http://localhost:8080/")
+			assert.Equal(t, tc.expectedCode, resp.StatusCode())
+			assert.Contains(t, string(resp.Body()), tc.expectedBody)
 		})
 	}
 }
 
 func TestGetURL(t *testing.T) {
-	type want struct {
-		code     int
-		response string
-		query    string
-	}
-	tests := []struct {
-		name string
-		want want
+	mockID := "sdReka"
+	provider := mem.New()
+	provider.SaveUrl("http://ya.ru", mockID)
+
+	router := chi.NewRouter()
+	router.Route("/", func(r chi.Router) {
+		r.Get("/{id}", func(w http.ResponseWriter, req *http.Request) {
+			GetURL(w, req, provider)
+		})
+	})
+	srv := httptest.NewServer(router)
+	defer srv.Close()
+
+	testCases := []struct {
+		method       string
+		url          string
+		expectedCode int
+		expectedBody string
 	}{
-		{
-			name: "url not found",
-			want: want{
-				query:    "sdReka",
-				code:     404,
-				response: `404 page not found`,
-			},
-		},
-		{
-			name: "empty query",
-			want: want{
-				query:    "",
-				code:     400,
-				response: `Bad url`,
-			},
-		},
+		{method: http.MethodGet, url: mockID, expectedCode: http.StatusOK, expectedBody: ""},
+		{method: http.MethodGet, url: "DeYqxc", expectedCode: http.StatusNotFound, expectedBody: "404 page not found"},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			//  создадим урл чтобы было что проверять
-			// bodyReader := bytes.NewReader([]byte("http://ya.ru"))
-			// createRequest := httptest.NewRequest(http.MethodPost, "/", bodyReader)
-			// w := httptest.NewRecorder()
-			// handlers.CreateURL(w, createRequest)
-			// createRes := w.Result()
-			// defer createRes.Body.Close()
-			// shortURL, err := io.ReadAll(createRes.Body)
-			// id := strings.TrimPrefix(string(shortURL), "/")
 
-			// пытаемся получить ранее созданные урл по id
-			// httptest.NewRequest создает фейковый HTTP-запрос и не имеет возможности сохранять состояние переменных между двумя запросами.
+	for _, tc := range testCases {
+		t.Run(tc.method, func(t *testing.T) {
+			req := resty.New().R()
+			req.Method = tc.method
+			baseURL := srv.URL
+			parsedURL, _ := url.Parse(baseURL)
+			newURL := parsedURL.ResolveReference(&url.URL{Path: tc.url})
+			req.URL = newURL.String()
 
-			request := httptest.NewRequest(http.MethodGet, "/"+tt.want.query, nil)
-			// создаём новый Recorder
-			ww := httptest.NewRecorder()
-
-			GetURL(ww, request, tt.want.query)
-
-			res := ww.Result()
-			// проверяем код ответа
-			assert.Equal(t, tt.want.code, res.StatusCode)
-			// получаем и проверяем тело запроса
-			defer res.Body.Close()
-			resBody, err := io.ReadAll(res.Body)
+			resp, err := req.Send()
 
 			require.NoError(t, err)
-			assert.Contains(t, string(resBody), tt.want.response)
+			assert.Equal(t, tc.expectedCode, resp.StatusCode())
+			if tc.expectedBody != "" {
+				assert.Contains(t, string(resp.Body()), tc.expectedBody)
+			}
+
 		})
 	}
 }

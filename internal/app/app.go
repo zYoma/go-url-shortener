@@ -1,0 +1,32 @@
+package app
+
+import (
+	"net/http"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/zYoma/go-url-shortener/internal/app/server"
+	"github.com/zYoma/go-url-shortener/internal/handlers"
+	"github.com/zYoma/go-url-shortener/internal/storage/mem"
+)
+
+type App struct {
+	Server *server.App
+}
+
+func New() *App {
+	provider := mem.New()
+	r := chi.NewRouter()
+
+	r.Route("/", func(r chi.Router) {
+		r.Post("/", func(w http.ResponseWriter, req *http.Request) {
+			handlers.CreateURL(w, req, provider)
+		})
+		r.Get("/{id}", func(w http.ResponseWriter, req *http.Request) {
+			handlers.GetURL(w, req, provider)
+		})
+	})
+
+	server := server.New("0.0.0.0", 8080, r)
+
+	return &App{Server: server}
+}

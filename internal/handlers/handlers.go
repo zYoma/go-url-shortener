@@ -5,12 +5,13 @@ import (
 	"io"
 	"math/rand"
 	"net/http"
+
+	"github.com/go-chi/chi/v5"
 )
 
-var urlStore map[string]string
-
-func init() {
-	urlStore = make(map[string]string)
+type UrlProvider interface {
+	SaveUrl(fullURL string, shortURL string)
+	GetUrl(shortURL string) (string, error)
 }
 
 func GenerateShortURL() string {
@@ -23,7 +24,7 @@ func GenerateShortURL() string {
 	return string(shortURL)
 }
 
-func CreateURL(w http.ResponseWriter, req *http.Request) {
+func CreateURL(w http.ResponseWriter, req *http.Request, provider UrlProvider) {
 
 	if req.Method == http.MethodPost {
 		body, err := io.ReadAll(req.Body)
@@ -39,7 +40,7 @@ func CreateURL(w http.ResponseWriter, req *http.Request) {
 		}
 
 		shortURL := GenerateShortURL()
-		urlStore[shortURL] = originalURL
+		provider.SaveUrl(originalURL, shortURL)
 
 		w.WriteHeader(http.StatusCreated)
 
@@ -48,15 +49,11 @@ func CreateURL(w http.ResponseWriter, req *http.Request) {
 
 }
 
-func GetURL(w http.ResponseWriter, req *http.Request, shortURL string) {
-	if shortURL == "" {
-		http.Error(w, "Bad url", http.StatusBadRequest)
-		return
-	}
+func GetURL(w http.ResponseWriter, req *http.Request, provider UrlProvider) {
+	shortURL := chi.URLParam(req, "id")
 
-	originalURL, ok := urlStore[shortURL]
-	if !ok {
-		fmt.Println()
+	originalURL, err := provider.GetUrl(shortURL)
+	if err != nil {
 		http.NotFound(w, req)
 		return
 	}

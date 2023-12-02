@@ -1,34 +1,25 @@
 package main
 
 import (
-	"net/http"
-	"strings"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
-	"github.com/zYoma/go-url-shortener/internal/handlers"
+	"github.com/zYoma/go-url-shortener/internal/app"
 )
 
 func main() {
-	mux := http.NewServeMux()
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet {
-			// Обработка GET запросов по адресу /{любая строка}
-			path := r.URL.Path
-			if path != "/" {
-				shortURL := strings.TrimPrefix(path, "/")
-				handlers.GetURL(w, r, shortURL)
-				return
-			}
-		} else if r.Method == http.MethodPost {
-			// Обработка POST запросов по адресу /
-			handlers.CreateURL(w, r)
-			return
-		}
+	// инициализация приложения
+	application := app.New()
 
-		http.NotFound(w, r)
-	})
+	// запустить сервис
+	go application.Server.MustRun()
 
-	err := http.ListenAndServe(`:8080`, mux)
-	if err != nil {
-		panic(err)
-	}
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
+
+	//горутины выполняются пока в канал не прилетит один из ожидаемых сигналов
+	sign := <-stop
+	log.Println("stopping application", sign)
 }
