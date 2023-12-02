@@ -13,13 +13,13 @@ type App struct {
 	Server *server.App
 }
 
-func New(address string, baseShortUrl string) *App {
+func New(address string, baseShortURL string) *App {
 	provider := mem.New()
 	r := chi.NewRouter()
 
 	r.Route("/", func(r chi.Router) {
 		r.Post("/", func(w http.ResponseWriter, req *http.Request) {
-			handlers.CreateURL(w, req, provider, baseShortUrl)
+			handlers.CreateURL(w, req, provider, baseShortURL)
 		})
 		r.Get("/{id}", func(w http.ResponseWriter, req *http.Request) {
 			handlers.GetURL(w, req, provider)

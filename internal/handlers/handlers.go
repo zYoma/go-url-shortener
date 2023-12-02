@@ -24,7 +24,7 @@ func GenerateShortURL() string {
 	return string(shortURL)
 }
 
-func CreateURL(w http.ResponseWriter, req *http.Request, provider URLProvider, baseShortUrl string) {
+func CreateURL(w http.ResponseWriter, req *http.Request, provider URLProvider, baseShortURL string) {
 
 	if req.Method == http.MethodPost {
 		body, err := io.ReadAll(req.Body)
@@ -44,7 +44,7 @@ func CreateURL(w http.ResponseWriter, req *http.Request, provider URLProvider, b
 
 		w.WriteHeader(http.StatusCreated)
 
-		fmt.Fprintf(w, "%s/%s", baseShortUrl, shortURL)
+		fmt.Fprintf(w, "%s/%s", baseShortURL, shortURL)
 	}
 
 }
