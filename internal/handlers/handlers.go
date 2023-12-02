@@ -10,8 +10,8 @@ import (
 )
 
 type URLProvider interface {
-	SaveUrl(fullURL string, shortURL string)
-	GetUrl(shortURL string) (string, error)
+	SaveURL(fullURL string, shortURL string)
+	GetURL(shortURL string) (string, error)
 }
 
 func GenerateShortURL() string {
@@ -40,7 +40,7 @@ func CreateURL(w http.ResponseWriter, req *http.Request, provider URLProvider) {
 		}
 
 		shortURL := GenerateShortURL()
-		provider.SaveUrl(originalURL, shortURL)
+		provider.SaveURL(originalURL, shortURL)
 
 		w.WriteHeader(http.StatusCreated)
 
@@ -52,7 +52,7 @@ func CreateURL(w http.ResponseWriter, req *http.Request, provider URLProvider) {
 func GetURL(w http.ResponseWriter, req *http.Request, provider URLProvider) {
 	shortURL := chi.URLParam(req, "id")
 
-	originalURL, err := provider.GetUrl(shortURL)
+	originalURL, err := provider.GetURL(shortURL)
 	if err != nil {
 		http.NotFound(w, req)
 		return

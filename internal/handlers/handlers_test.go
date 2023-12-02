@@ -49,7 +49,7 @@ func TestCreateURL(t *testing.T) {
 func TestGetURL(t *testing.T) {
 	mockID := "sdReka"
 	provider := mem.New()
-	provider.SaveUrl("http://ya.ru", mockID)
+	provider.SaveURL("http://ya.ru", mockID)
 
 	router := chi.NewRouter()
 	router.Route("/", func(r chi.Router) {
