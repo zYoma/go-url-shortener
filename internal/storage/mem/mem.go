@@ -2,6 +2,7 @@ package mem
 
 import "errors"
 
+// реализация хранилища в памяти
 type Storage struct {
 	db map[string]string
 }

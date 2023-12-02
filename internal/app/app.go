@@ -14,9 +14,13 @@ type App struct {
 }
 
 func New(address string, baseShortURL string) *App {
+	// создаем провайдер для storage
 	provider := mem.New()
+
+	// создаем роутер
 	r := chi.NewRouter()
 
+	// добавляем маршруты
 	r.Route("/", func(r chi.Router) {
 		r.Post("/", func(w http.ResponseWriter, req *http.Request) {
 			handlers.CreateURL(w, req, provider, baseShortURL)
@@ -26,6 +30,7 @@ func New(address string, baseShortURL string) *App {
 		})
 	})
 
+	// создаем сервер
 	server := server.New(address, r)
 
 	return &App{Server: server}

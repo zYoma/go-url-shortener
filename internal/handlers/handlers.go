@@ -3,10 +3,10 @@ package handlers
 import (
 	"fmt"
 	"io"
-	"math/rand"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/zYoma/go-url-shortener/internal/services/generator"
 )
 
 type URLProvider interface {
@@ -14,50 +14,46 @@ type URLProvider interface {
 	GetURL(shortURL string) (string, error)
 }
 
-func GenerateShortURL() string {
-	const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-
-	shortURL := make([]byte, 6)
-	for i := range shortURL {
-		shortURL[i] = letters[rand.Intn(len(letters))]
-	}
-	return string(shortURL)
-}
-
 func CreateURL(w http.ResponseWriter, req *http.Request, provider URLProvider, baseShortURL string) {
-
-	if req.Method == http.MethodPost {
-		body, err := io.ReadAll(req.Body)
-		if err != nil {
-			w.Write([]byte(err.Error()))
-			return
-		}
-
-		originalURL := string(body)
-		if originalURL == "" {
-			http.Error(w, "URL cannot be empty", http.StatusBadRequest)
-			return
-		}
-
-		shortURL := GenerateShortURL()
-		provider.SaveURL(originalURL, shortURL)
-
-		w.WriteHeader(http.StatusCreated)
-
-		fmt.Fprintf(w, "%s/%s", baseShortURL, shortURL)
+	// получаем тело запроса
+	body, err := io.ReadAll(req.Body)
+	if err != nil {
+		w.Write([]byte(err.Error()))
+		return
 	}
 
+	// проверяем, что тело не пустое
+	originalURL := string(body)
+	if originalURL == "" {
+		http.Error(w, "URL cannot be empty", http.StatusBadRequest)
+		return
+	}
+
+	// создаем короткую ссылку
+	shortURL := generator.GenerateShortURL()
+
+	// сохраняем ссылку в хранилище
+	provider.SaveURL(originalURL, shortURL)
+
+	// устанавливаем статус ответа
+	w.WriteHeader(http.StatusCreated)
+
+	// пишем ответ
+	fmt.Fprintf(w, "%s/%s", baseShortURL, shortURL)
 }
 
 func GetURL(w http.ResponseWriter, req *http.Request, provider URLProvider) {
+	// получаем идентификатор из пути
 	shortURL := chi.URLParam(req, "id")
 
+	// проверяем в хранилище, есть ли урл для полученного id
 	originalURL, err := provider.GetURL(shortURL)
 	if err != nil {
 		http.NotFound(w, req)
 		return
 	}
 
+	// устанавливаем заголовок и пишем ответ
 	w.Header().Set("Location", originalURL)
 	w.WriteHeader(http.StatusTemporaryRedirect)
 
