@@ -9,7 +9,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-type UrlProvider interface {
+type URLProvider interface {
 	SaveUrl(fullURL string, shortURL string)
 	GetUrl(shortURL string) (string, error)
 }
@@ -24,7 +24,7 @@ func GenerateShortURL() string {
 	return string(shortURL)
 }
 
-func CreateURL(w http.ResponseWriter, req *http.Request, provider UrlProvider) {
+func CreateURL(w http.ResponseWriter, req *http.Request, provider URLProvider) {
 
 	if req.Method == http.MethodPost {
 		body, err := io.ReadAll(req.Body)
@@ -49,7 +49,7 @@ func CreateURL(w http.ResponseWriter, req *http.Request, provider UrlProvider) {
 
 }
 
-func GetURL(w http.ResponseWriter, req *http.Request, provider UrlProvider) {
+func GetURL(w http.ResponseWriter, req *http.Request, provider URLProvider) {
 	shortURL := chi.URLParam(req, "id")
 
 	originalURL, err := provider.GetUrl(shortURL)
