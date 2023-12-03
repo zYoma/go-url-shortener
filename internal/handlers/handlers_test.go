@@ -6,7 +6,6 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -15,23 +14,23 @@ import (
 
 func TestCreateURL(t *testing.T) {
 	provider := mem.New()
-	handler := func(w http.ResponseWriter, req *http.Request) {
-		CreateURL(w, req, provider, "http://localhost:8080")
-	}
-	srv := httptest.NewServer(http.HandlerFunc(handler))
+	service := New(provider, "http://localhost:8080")
+	r := service.GetRouter()
+	srv := httptest.NewServer(r)
 	defer srv.Close()
 
 	testCases := []struct {
+		name         string
 		method       string
 		body         string
 		expectedCode int
 		expectedBody string
 	}{
-		{method: http.MethodPost, body: "http://ya.ru", expectedCode: http.StatusCreated, expectedBody: "http://localhost:8080/"},
-		{method: http.MethodPost, body: "", expectedCode: http.StatusBadRequest, expectedBody: "URL cannot be empty"},
+		{name: "успешный кейс", method: http.MethodPost, body: "http://ya.ru", expectedCode: http.StatusCreated, expectedBody: "http://localhost:8080/"},
+		{name: "пустое тело запроса", method: http.MethodPost, body: "", expectedCode: http.StatusBadRequest, expectedBody: "URL cannot be empty"},
 	}
 	for _, tc := range testCases {
-		t.Run(tc.method, func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			req := resty.New().R()
 			req.Method = tc.method
 			req.URL = srv.URL
@@ -51,27 +50,24 @@ func TestGetURL(t *testing.T) {
 	provider := mem.New()
 	provider.SaveURL("http://ya.ru", mockID)
 
-	router := chi.NewRouter()
-	router.Route("/", func(r chi.Router) {
-		r.Get("/{id}", func(w http.ResponseWriter, req *http.Request) {
-			GetURL(w, req, provider)
-		})
-	})
-	srv := httptest.NewServer(router)
+	service := New(provider, "http://localhost:8080")
+	r := service.GetRouter()
+	srv := httptest.NewServer(r)
 	defer srv.Close()
 
 	testCases := []struct {
+		name         string
 		method       string
 		url          string
 		expectedCode int
 		expectedBody string
 	}{
-		{method: http.MethodGet, url: mockID, expectedCode: http.StatusOK, expectedBody: ""},
-		{method: http.MethodGet, url: "DeYqxc", expectedCode: http.StatusNotFound, expectedBody: "404 page not found"},
+		{name: "ссылка найдена", method: http.MethodGet, url: mockID, expectedCode: http.StatusOK, expectedBody: ""},
+		{name: "ссылка не найдена", method: http.MethodGet, url: "DeYqxc", expectedCode: http.StatusNotFound, expectedBody: "404 page not found"},
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.method, func(t *testing.T) {
+		t.Run(tc.name, func(t *testing.T) {
 			req := resty.New().R()
 			req.Method = tc.method
 			baseURL := srv.URL

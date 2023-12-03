@@ -1,9 +1,8 @@
 package app
 
 import (
-	"net/http"
+	"log"
 
-	"github.com/go-chi/chi/v5"
 	"github.com/zYoma/go-url-shortener/internal/app/server"
 	"github.com/zYoma/go-url-shortener/internal/handlers"
 	"github.com/zYoma/go-url-shortener/internal/storage/mem"
@@ -17,21 +16,34 @@ func New(address string, baseShortURL string) *App {
 	// создаем провайдер для storage
 	provider := mem.New()
 
-	// создаем роутер
-	r := chi.NewRouter()
+	// создаем сервис обработчик
+	service := handlers.New(provider, baseShortURL)
 
-	// добавляем маршруты
-	r.Route("/", func(r chi.Router) {
-		r.Post("/", func(w http.ResponseWriter, req *http.Request) {
-			handlers.CreateURL(w, req, provider, baseShortURL)
-		})
-		r.Get("/{id}", func(w http.ResponseWriter, req *http.Request) {
-			handlers.GetURL(w, req, provider)
-		})
-	})
+	// получаем роутер
+	r := service.GetRouter()
 
 	// создаем сервер
 	server := server.New(address, r)
 
 	return &App{Server: server}
+}
+
+func (s *App) Run() error {
+	// Создание канала для ошибок
+	errChan := make(chan error)
+
+	// запустить сервис
+	log.Printf("start application")
+
+	go func() {
+		errChan <- s.Server.Run()
+	}()
+
+	// Ожидание и обработка ошибки из горутины
+	if err := <-errChan; err != nil {
+		return err
+	}
+
+	return nil
+
 }

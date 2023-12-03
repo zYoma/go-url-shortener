@@ -12,14 +12,15 @@ import (
 
 func main() {
 	// получаем конфигурацию
-	flagRunAddr, flagBaseShortURL := config.ParseFlags()
+	cfg := config.GetConfig()
 
 	// инициализация приложения
-	application := app.New(flagRunAddr, flagBaseShortURL)
+	application := app.New(cfg.RunAddr, cfg.BaseShortURL)
 
-	// запустить сервис
-	log.Printf("start application on %s", flagRunAddr)
-	go application.Server.MustRun()
+	// запускаем приложение
+	if err := application.Run(); err != nil {
+		panic(err)
+	}
 
 	// будем ждать сигнала остановки приложения
 	stop := make(chan os.Signal, 1)

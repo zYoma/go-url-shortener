@@ -14,11 +14,21 @@ type URLProvider interface {
 	GetURL(shortURL string) (string, error)
 }
 
-func CreateURL(w http.ResponseWriter, req *http.Request, provider URLProvider, baseShortURL string) {
+// не уверен в нейминге
+type HandlerService struct {
+	provider     URLProvider
+	baseShortURL string
+}
+
+func New(provider URLProvider, baseShortURL string) *HandlerService {
+	return &HandlerService{provider: provider, baseShortURL: baseShortURL}
+}
+
+func (h *HandlerService) CreateURL(w http.ResponseWriter, req *http.Request) {
 	// получаем тело запроса
 	body, err := io.ReadAll(req.Body)
 	if err != nil {
-		w.Write([]byte(err.Error()))
+		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
@@ -33,21 +43,21 @@ func CreateURL(w http.ResponseWriter, req *http.Request, provider URLProvider, b
 	shortURL := generator.GenerateShortURL()
 
 	// сохраняем ссылку в хранилище
-	provider.SaveURL(originalURL, shortURL)
+	h.provider.SaveURL(originalURL, shortURL)
 
 	// устанавливаем статус ответа
 	w.WriteHeader(http.StatusCreated)
 
 	// пишем ответ
-	fmt.Fprintf(w, "%s/%s", baseShortURL, shortURL)
+	fmt.Fprintf(w, "%s/%s", h.baseShortURL, shortURL)
 }
 
-func GetURL(w http.ResponseWriter, req *http.Request, provider URLProvider) {
+func (h *HandlerService) GetURL(w http.ResponseWriter, req *http.Request) {
 	// получаем идентификатор из пути
 	shortURL := chi.URLParam(req, "id")
 
 	// проверяем в хранилище, есть ли урл для полученного id
-	originalURL, err := provider.GetURL(shortURL)
+	originalURL, err := h.provider.GetURL(shortURL)
 	if err != nil {
 		http.NotFound(w, req)
 		return
@@ -57,4 +67,17 @@ func GetURL(w http.ResponseWriter, req *http.Request, provider URLProvider) {
 	w.Header().Set("Location", originalURL)
 	w.WriteHeader(http.StatusTemporaryRedirect)
 
+}
+
+func (h *HandlerService) GetRouter() chi.Router {
+	// создаем роутер
+	r := chi.NewRouter()
+
+	// добавляем маршруты
+	r.Route("/", func(r chi.Router) {
+		r.Post("/", h.CreateURL)
+		r.Get("/{id}", h.GetURL)
+	})
+
+	return r
 }

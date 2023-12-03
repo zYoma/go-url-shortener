@@ -13,7 +13,12 @@ const (
 	envBaseURL       = "BASE_URL"
 )
 
-func ParseFlags() (string, string) {
+type Config struct {
+	RunAddr      string
+	BaseShortURL string
+}
+
+func GetConfig() *Config {
 	// парсим аргументы командной строки
 	flag.StringVar(&flagRunAddr, "a", ":8080", "address and port to run server")
 	flag.StringVar(&flagBaseShortURL, "b", "http://localhost:8080", "base short url")
@@ -27,5 +32,8 @@ func ParseFlags() (string, string) {
 		flagBaseShortURL = envBaseShortURL
 	}
 
-	return flagRunAddr, flagBaseShortURL
+	return &Config{
+		RunAddr:      flagRunAddr,
+		BaseShortURL: flagBaseShortURL,
+	}
 }

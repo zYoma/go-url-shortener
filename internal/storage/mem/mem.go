@@ -1,10 +1,14 @@
 package mem
 
-import "errors"
+import (
+	"errors"
+	"sync"
+)
 
 // реализация хранилища в памяти
 type Storage struct {
-	db map[string]string
+	db    map[string]string
+	mutex sync.Mutex
 }
 
 func New() *Storage {
@@ -14,6 +18,9 @@ func New() *Storage {
 
 // SaveUrl to db.
 func (s *Storage) SaveURL(fullURL string, shortURL string) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	s.db[shortURL] = fullURL
 }
 
