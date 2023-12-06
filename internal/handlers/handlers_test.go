@@ -9,12 +9,21 @@ import (
 	"github.com/go-resty/resty/v2"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/zYoma/go-url-shortener/internal/config"
 	"github.com/zYoma/go-url-shortener/internal/storage/mem"
 )
 
+func GetMockConfig() *config.Config {
+	return &config.Config{
+		RunAddr:      ":8080",
+		BaseShortURL: "http://localhost:8080",
+	}
+}
+
 func TestCreateURL(t *testing.T) {
+	cfg := GetMockConfig()
 	provider := mem.New()
-	service := New(provider, "http://localhost:8080")
+	service := New(provider, cfg)
 	r := service.GetRouter()
 	srv := httptest.NewServer(r)
 	defer srv.Close()
@@ -50,7 +59,8 @@ func TestGetURL(t *testing.T) {
 	provider := mem.New()
 	provider.SaveURL("http://ya.ru", mockID)
 
-	service := New(provider, "http://localhost:8080")
+	cfg := GetMockConfig()
+	service := New(provider, cfg)
 	r := service.GetRouter()
 	srv := httptest.NewServer(r)
 	defer srv.Close()

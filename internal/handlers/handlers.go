@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/zYoma/go-url-shortener/internal/config"
 	"github.com/zYoma/go-url-shortener/internal/services/generator"
 )
 
@@ -16,12 +17,12 @@ type URLProvider interface {
 
 // не уверен в нейминге
 type HandlerService struct {
-	provider     URLProvider
-	baseShortURL string
+	provider URLProvider
+	cfg      *config.Config
 }
 
-func New(provider URLProvider, baseShortURL string) *HandlerService {
-	return &HandlerService{provider: provider, baseShortURL: baseShortURL}
+func New(provider URLProvider, cfg *config.Config) *HandlerService {
+	return &HandlerService{provider: provider, cfg: cfg}
 }
 
 func (h *HandlerService) CreateURL(w http.ResponseWriter, req *http.Request) {
@@ -49,7 +50,7 @@ func (h *HandlerService) CreateURL(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusCreated)
 
 	// пишем ответ
-	fmt.Fprintf(w, "%s/%s", h.baseShortURL, shortURL)
+	fmt.Fprintf(w, "%s/%s", h.cfg.BaseShortURL, shortURL)
 }
 
 func (h *HandlerService) GetURL(w http.ResponseWriter, req *http.Request) {

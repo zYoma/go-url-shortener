@@ -15,7 +15,7 @@ func main() {
 	cfg := config.GetConfig()
 
 	// инициализация приложения
-	application := app.New(cfg.RunAddr, cfg.BaseShortURL)
+	application := app.New(cfg)
 
 	// запускаем приложение
 	if err := application.Run(); err != nil {

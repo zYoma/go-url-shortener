@@ -4,26 +4,20 @@ import (
 	"log"
 
 	"github.com/zYoma/go-url-shortener/internal/app/server"
-	"github.com/zYoma/go-url-shortener/internal/handlers"
+	"github.com/zYoma/go-url-shortener/internal/config"
 	"github.com/zYoma/go-url-shortener/internal/storage/mem"
 )
 
 type App struct {
-	Server *server.App
+	Server *server.HTTPServer
 }
 
-func New(address string, baseShortURL string) *App {
+func New(cfg *config.Config) *App {
 	// создаем провайдер для storage
 	provider := mem.New()
 
-	// создаем сервис обработчик
-	service := handlers.New(provider, baseShortURL)
-
-	// получаем роутер
-	r := service.GetRouter()
-
 	// создаем сервер
-	server := server.New(address, r)
+	server := server.New(provider, cfg)
 
 	return &App{Server: server}
 }

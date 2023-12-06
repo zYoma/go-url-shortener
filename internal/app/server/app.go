@@ -3,27 +3,35 @@ package server
 import (
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
+	"github.com/zYoma/go-url-shortener/internal/config"
+	"github.com/zYoma/go-url-shortener/internal/handlers"
 )
 
-type App struct {
+type HTTPServer struct {
 	server *http.Server
 }
 
 func New(
-	address string,
-	router chi.Router,
-) *App {
+	provider handlers.URLProvider,
+	cfg *config.Config,
+) *HTTPServer {
+
+	// создаем сервис обработчик
+	service := handlers.New(provider, cfg)
+
+	// получаем роутер
+	router := service.GetRouter()
+
 	server := &http.Server{
-		Addr:    address,
+		Addr:    cfg.RunAddr,
 		Handler: router,
 	}
-	return &App{
+	return &HTTPServer{
 		server: server,
 	}
 }
 
-func (a *App) Run() error {
+func (a *HTTPServer) Run() error {
 	err := a.server.ListenAndServe()
 	if err != nil {
 		return err
