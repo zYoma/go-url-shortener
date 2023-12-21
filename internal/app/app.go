@@ -1,10 +1,9 @@
 package app
 
 import (
-	"log"
-
 	"github.com/zYoma/go-url-shortener/internal/app/server"
 	"github.com/zYoma/go-url-shortener/internal/config"
+	"github.com/zYoma/go-url-shortener/internal/logger"
 	"github.com/zYoma/go-url-shortener/internal/storage/mem"
 )
 
@@ -27,7 +26,7 @@ func (s *App) Run() error {
 	errChan := make(chan error)
 
 	// запустить сервис
-	log.Printf("start application")
+	logger.Log.Info("start application")
 
 	go func() {
 		errChan <- s.Server.Run()

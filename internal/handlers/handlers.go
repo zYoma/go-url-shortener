@@ -74,6 +74,8 @@ func (h *HandlerService) GetRouter() chi.Router {
 	// создаем роутер
 	r := chi.NewRouter()
 
+	r.Use(handlerLogger)
+
 	// добавляем маршруты
 	r.Route("/", func(r chi.Router) {
 		r.Post("/", h.CreateURL)
