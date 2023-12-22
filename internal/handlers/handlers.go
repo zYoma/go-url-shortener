@@ -6,7 +6,7 @@ import (
 	"io"
 	"net/http"
 
-	_ "encoding/json" // Только для того, чтобы обойти проверку - iteration7_test.go:110: Не найдено использование известных библиотек кодирования JSON . Хочу использовать render
+	"encoding/json"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
@@ -126,7 +126,13 @@ func (h *HandlerService) CreateShortURL(w http.ResponseWriter, r *http.Request) 
 		Result: fmt.Sprintf("%s/%s", h.cfg.BaseShortURL, shortURL),
 	}
 
-	render.JSON(w, r, response)
+	// Только для того, чтобы обойти проверку - iteration7_test.go:110: Не найдено использование известных библиотек кодирования JSON . Хочу использовать render
+	// render.JSON(w, r, response)
+	enc := json.NewEncoder(w)
+	if err := enc.Encode(response); err != nil {
+		logger.Log.Error("error encoding response", zap.Error(err))
+		return
+	}
 }
 
 func (h *HandlerService) GetRouter() chi.Router {
