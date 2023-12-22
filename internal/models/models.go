@@ -44,7 +44,7 @@ func ValidationError(errs validator.ValidationErrors) ErrorResponse {
 }
 
 type CreateShortURLRequest struct {
-	Url string `json:"url" validate:"required,url"`
+	URL string `json:"url" validate:"required,url"`
 }
 
 type CreateShortURLResponse struct {
