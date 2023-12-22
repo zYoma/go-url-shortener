@@ -80,6 +80,8 @@ func (h *HandlerService) CreateShortURL(w http.ResponseWriter, r *http.Request) 
 
 	var req models.CreateShortURLRequest
 
+	w.Header().Set("Content-Type", "application/json")
+
 	// декодируем тело запроса
 	err := render.DecodeJSON(r.Body, &req)
 
@@ -114,9 +116,8 @@ func (h *HandlerService) CreateShortURL(w http.ResponseWriter, r *http.Request) 
 	// сохраняем ссылку в хранилище
 	h.provider.SaveURL(req.Url, shortURL)
 
-	// устанавливаем статус ответа
+	// устанавливаем статус
 	w.WriteHeader(http.StatusCreated)
-	w.Header().Set("Content-Type", "application/json")
 
 	// сериализуем ответ сервера
 	response := models.CreateShortURLResponse{

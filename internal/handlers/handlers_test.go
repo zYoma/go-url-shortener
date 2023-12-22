@@ -130,6 +130,8 @@ func TestCreateShortURL(t *testing.T) {
 			resp, err := req.Send()
 
 			require.NoError(t, err)
+			contentType := resp.Header().Get("Content-Type")
+			assert.Equal(t, "application/json", contentType)
 			assert.Equal(t, tc.expectedCode, resp.StatusCode())
 			if tc.expectedBody != "" {
 				assert.Contains(t, string(resp.Body()), tc.expectedBody)
