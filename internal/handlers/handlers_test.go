@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -93,6 +94,46 @@ func TestGetURL(t *testing.T) {
 				assert.Contains(t, string(resp.Body()), tc.expectedBody)
 			}
 
+		})
+	}
+}
+
+func TestCreateShortURL(t *testing.T) {
+	cfg := GetMockConfig()
+	provider := mem.New()
+	service := New(provider, cfg)
+	r := service.GetRouter()
+	srv := httptest.NewServer(r)
+	defer srv.Close()
+
+	testCases := []struct {
+		name         string
+		method       string
+		body         string
+		expectedCode int
+		expectedBody string
+	}{
+		{name: "успешный кейс", method: http.MethodPost, body: `{"url": "http://ya.ru"}`, expectedCode: http.StatusCreated, expectedBody: "http://localhost:8080/"},
+		{name: "пустое тело запроса", method: http.MethodPost, body: "", expectedCode: http.StatusBadRequest, expectedBody: "empty request"},
+		{name: "невалидный json", method: http.MethodPost, body: `{"url": "http://ya.ru",}`, expectedCode: http.StatusBadRequest, expectedBody: "failed to decode request"},
+		{name: "невалидный url", method: http.MethodPost, body: `{"url": "ya.ru"}`, expectedCode: http.StatusBadRequest, expectedBody: "is not a valid URL"},
+		{name: "не передан url", method: http.MethodPost, body: `{}`, expectedCode: http.StatusBadRequest, expectedBody: "Url is a required field"},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			req := resty.New().R()
+			req.Method = tc.method
+			url := fmt.Sprintf("%s/api/shorten", srv.URL)
+			req.URL = url
+			req.SetBody(tc.body)
+
+			resp, err := req.Send()
+
+			require.NoError(t, err)
+			assert.Equal(t, tc.expectedCode, resp.StatusCode())
+			if tc.expectedBody != "" {
+				assert.Contains(t, string(resp.Body()), tc.expectedBody)
+			}
 		})
 	}
 }
