@@ -1,7 +1,10 @@
 package handlers
 
 import (
+	"bytes"
+	"compress/gzip"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -42,6 +45,7 @@ func TestCreateURL(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			req := resty.New().R()
+			req.Header.Set("Accept-Encoding", "")
 			req.Method = tc.method
 			req.URL = srv.URL
 			req.SetBody(tc.body)
@@ -80,6 +84,7 @@ func TestGetURL(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			req := resty.New().R()
+			req.Header.Set("Accept-Encoding", "")
 			req.Method = tc.method
 			baseURL := srv.URL
 			parsedURL, _ := url.Parse(baseURL)
@@ -122,6 +127,7 @@ func TestCreateShortURL(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			req := resty.New().R()
+			req.Header.Set("Accept-Encoding", "")
 			req.Method = tc.method
 			url := fmt.Sprintf("%s/api/shorten", srv.URL)
 			req.URL = url
@@ -138,4 +144,76 @@ func TestCreateShortURL(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestGzipCompression(t *testing.T) {
+	cfg := GetMockConfig()
+	provider := mem.New()
+	service := New(provider, cfg)
+	r := service.GetRouter()
+	srv := httptest.NewServer(r)
+	defer srv.Close()
+
+	requestBody := `{}`
+
+	// ожидаемое содержимое тела ответа при успешном запросе
+	successBody := `{
+		"status": "Error",
+		"error": "field URL is a required field"
+	}`
+
+	t.Run("sends_gzip", func(t *testing.T) {
+		buf := bytes.NewBuffer(nil)
+		zb := gzip.NewWriter(buf)
+		_, err := zb.Write([]byte(requestBody))
+
+		require.NoError(t, err)
+		err = zb.Close()
+		require.NoError(t, err)
+
+		url := fmt.Sprintf("%s/api/shorten", srv.URL)
+		r := httptest.NewRequest("POST", url, buf)
+		r.RequestURI = ""
+		r.Header.Set("Content-Encoding", "gzip")
+
+		resp, err := http.DefaultClient.Do(r)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+
+		defer resp.Body.Close()
+
+		b, err := io.ReadAll(resp.Body)
+		require.NoError(t, err)
+
+		rr := bytes.NewReader(b)
+		gr, _ := gzip.NewReader(rr)
+		defer gr.Close()
+		// Чтение и распаковка данных
+		var result bytes.Buffer
+		io.Copy(&result, gr)
+
+		require.JSONEq(t, successBody, result.String())
+	})
+
+	t.Run("accepts_gzip", func(t *testing.T) {
+		buf := bytes.NewBufferString(requestBody)
+		url := fmt.Sprintf("%s/api/shorten", srv.URL)
+		r := httptest.NewRequest("POST", url, buf)
+		r.RequestURI = ""
+		r.Header.Set("Accept-Encoding", "gzip")
+
+		resp, err := http.DefaultClient.Do(r)
+		require.NoError(t, err)
+		require.Equal(t, http.StatusBadRequest, resp.StatusCode)
+
+		defer resp.Body.Close()
+
+		zr, err := gzip.NewReader(resp.Body)
+		require.NoError(t, err)
+
+		b, err := io.ReadAll(zr)
+		require.NoError(t, err)
+
+		require.JSONEq(t, successBody, string(b))
+	})
 }

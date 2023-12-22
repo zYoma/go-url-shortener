@@ -140,6 +140,7 @@ func (h *HandlerService) GetRouter() chi.Router {
 	r := chi.NewRouter()
 
 	r.Use(handlerLogger)
+	r.Use(gzipMiddleware)
 
 	// добавляем маршруты
 	r.Route("/", func(r chi.Router) {
