@@ -21,6 +21,8 @@ import (
 type URLProvider interface {
 	SaveURL(fullURL string, shortURL string)
 	GetURL(shortURL string) (string, error)
+	Init(cfg *config.Config) error
+	Stop(cfg *config.Config) error
 }
 
 // не уверен в нейминге
