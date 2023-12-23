@@ -55,6 +55,7 @@ func (h *HandlerService) CreateURL(w http.ResponseWriter, req *http.Request) {
 	// сохраняем ссылку в хранилище
 	err = h.provider.SaveURL(originalURL, shortURL)
 	if err != nil {
+		render.JSON(w, req, models.Error("failed save link to db"))
 		return
 	}
 
@@ -122,6 +123,7 @@ func (h *HandlerService) CreateShortURL(w http.ResponseWriter, r *http.Request) 
 	// сохраняем ссылку в хранилище
 	err = h.provider.SaveURL(req.URL, shortURL)
 	if err != nil {
+		render.JSON(w, r, models.Error("failed save link to db"))
 		return
 	}
 
