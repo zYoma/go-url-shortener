@@ -49,6 +49,13 @@ func (s *Storage) Init(cfg *config.Config) error {
 	}
 	defer file.Close()
 
+	// Получаем информацию о файле для проверки размера
+	fileInfo, err := file.Stat()
+	if err != nil {
+		logger.Log.Sugar().Errorf("Ошибка получения информации о файле: %s", err)
+		return err
+	}
+
 	// Сброс указателя чтения файла в начало
 	// if _, err := file.Seek(0, 0); err != nil {
 	// 	logger.Log.Sugar().Errorf("Ошибка сброса указателя чтения файла: %s", err)
@@ -56,9 +63,11 @@ func (s *Storage) Init(cfg *config.Config) error {
 	// }
 	// Декодируем содержимое файла в map[string]string
 
-	if err := json.NewDecoder(file).Decode(&s.db); err != nil {
-		logger.Log.Sugar().Errorf("Ошибка декодирования JSON: %s", err)
-		return err
+	if fileInfo.Size() > 0 {
+		if err := json.NewDecoder(file).Decode(&s.db); err != nil {
+			logger.Log.Sugar().Errorf("Ошибка декодирования JSON: %s", err)
+			return err
+		}
 	}
 
 	return nil
@@ -79,7 +88,7 @@ func (s *Storage) Stop(cfg *config.Config) error {
 		defer file.Close()
 
 		// Сериализуем map в JSON и записываем в файл
-		if err := json.NewEncoder(file).Encode(s.db); err != nil {
+		if err := json.NewEncoder(file).Encode(&s.db); err != nil {
 			logger.Log.Sugar().Errorf("Ошибка записи в файл: %s", err)
 			return err
 		}
