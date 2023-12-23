@@ -21,12 +21,13 @@ func GetMockConfig() *config.Config {
 	return &config.Config{
 		RunAddr:      ":8080",
 		BaseShortURL: "http://localhost:8080",
+		StorageFile:  "/tmp/short-url-db.json",
 	}
 }
 
 func TestCreateURL(t *testing.T) {
 	cfg := GetMockConfig()
-	provider := mem.New()
+	provider := mem.New(cfg)
 	service := New(provider, cfg)
 	r := service.GetRouter()
 	srv := httptest.NewServer(r)
@@ -61,10 +62,10 @@ func TestCreateURL(t *testing.T) {
 
 func TestGetURL(t *testing.T) {
 	mockID := "sdReka"
-	provider := mem.New()
+	cfg := GetMockConfig()
+	provider := mem.New(cfg)
 	provider.SaveURL("http://ya.ru", mockID)
 
-	cfg := GetMockConfig()
 	service := New(provider, cfg)
 	r := service.GetRouter()
 	srv := httptest.NewServer(r)
@@ -105,7 +106,7 @@ func TestGetURL(t *testing.T) {
 
 func TestCreateShortURL(t *testing.T) {
 	cfg := GetMockConfig()
-	provider := mem.New()
+	provider := mem.New(cfg)
 	service := New(provider, cfg)
 	r := service.GetRouter()
 	srv := httptest.NewServer(r)
@@ -148,7 +149,7 @@ func TestCreateShortURL(t *testing.T) {
 
 func TestGzipCompression(t *testing.T) {
 	cfg := GetMockConfig()
-	provider := mem.New()
+	provider := mem.New(cfg)
 	service := New(provider, cfg)
 	r := service.GetRouter()
 	srv := httptest.NewServer(r)

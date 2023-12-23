@@ -3,22 +3,20 @@ package app
 import (
 	"github.com/zYoma/go-url-shortener/internal/app/server"
 	"github.com/zYoma/go-url-shortener/internal/config"
-	"github.com/zYoma/go-url-shortener/internal/handlers"
 	"github.com/zYoma/go-url-shortener/internal/logger"
 	"github.com/zYoma/go-url-shortener/internal/storage/mem"
 )
 
 type App struct {
-	Server   *server.HTTPServer
-	Provider handlers.URLProvider
+	Server *server.HTTPServer
 }
 
 func New(cfg *config.Config) (*App, error) {
 	// создаем провайдер для storage
-	provider := mem.New()
+	provider := mem.New(cfg)
 
 	// инициализируем провайдера
-	err := provider.Init(cfg)
+	err := provider.Init()
 	if err != nil {
 		return nil, err
 	}
@@ -26,7 +24,7 @@ func New(cfg *config.Config) (*App, error) {
 	// создаем сервер
 	server := server.New(provider, cfg)
 
-	return &App{Server: server, Provider: provider}, nil
+	return &App{Server: server}, nil
 }
 
 func (s *App) Run() error {

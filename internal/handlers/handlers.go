@@ -19,10 +19,9 @@ import (
 )
 
 type URLProvider interface {
-	SaveURL(fullURL string, shortURL string)
+	SaveURL(fullURL string, shortURL string) error
 	GetURL(shortURL string) (string, error)
-	Init(cfg *config.Config) error
-	Stop(cfg *config.Config) error
+	Init() error
 }
 
 // не уверен в нейминге
@@ -54,7 +53,10 @@ func (h *HandlerService) CreateURL(w http.ResponseWriter, req *http.Request) {
 	shortURL := generator.GenerateShortURL()
 
 	// сохраняем ссылку в хранилище
-	h.provider.SaveURL(originalURL, shortURL)
+	err = h.provider.SaveURL(originalURL, shortURL)
+	if err != nil {
+		return
+	}
 
 	// устанавливаем статус ответа
 	w.WriteHeader(http.StatusCreated)
@@ -118,7 +120,10 @@ func (h *HandlerService) CreateShortURL(w http.ResponseWriter, r *http.Request) 
 	shortURL := generator.GenerateShortURL()
 
 	// сохраняем ссылку в хранилище
-	h.provider.SaveURL(req.URL, shortURL)
+	err = h.provider.SaveURL(req.URL, shortURL)
+	if err != nil {
+		return
+	}
 
 	// устанавливаем статус
 	w.WriteHeader(http.StatusCreated)

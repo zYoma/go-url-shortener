@@ -36,6 +36,5 @@ func main() {
 
 	//горутины выполняются пока в канал не прилетит один из ожидаемых сигналов
 	sign := <-stop
-	application.Provider.Stop(cfg)
 	logger.Log.Sugar().Infoln("stopping application", sign)
 }
