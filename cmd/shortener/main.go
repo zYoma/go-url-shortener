@@ -3,7 +3,6 @@ package main
 import (
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 
 	"github.com/zYoma/go-url-shortener/internal/app"
@@ -36,23 +35,7 @@ func main() {
 	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
 
 	//горутины выполняются пока в канал не прилетит один из ожидаемых сигналов
-
-	// Определяем WaitGroup для ожидания завершения горутин
-	var wg sync.WaitGroup
-	wg.Add(1) // Добавляем горутину для ожидания
-
-	// Горутина для ожидания сигнала SIGTERM/SIGINT
-	go func() {
-		defer wg.Done() // Уменьшаем счетчик горутин после завершения
-		sign := <-stop
-		application.Provider.Stop(cfg)
-		logger.Log.Sugar().Infoln("stopping application", sign)
-	}()
-
-	// Ожидаем завершение горутины перед выходом
-	wg.Wait()
-
-	// sign := <-stop
-	// application.Provider.Stop(cfg)
-	// logger.Log.Sugar().Infoln("stopping application", sign)
+	sign := <-stop
+	application.Provider.Stop(cfg)
+	logger.Log.Sugar().Infoln("stopping application", sign)
 }
