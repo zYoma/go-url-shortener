@@ -1,10 +1,9 @@
 package app
 
 import (
-	"log"
-
 	"github.com/zYoma/go-url-shortener/internal/app/server"
 	"github.com/zYoma/go-url-shortener/internal/config"
+	"github.com/zYoma/go-url-shortener/internal/logger"
 	"github.com/zYoma/go-url-shortener/internal/storage/mem"
 )
 
@@ -12,14 +11,20 @@ type App struct {
 	Server *server.HTTPServer
 }
 
-func New(cfg *config.Config) *App {
+func New(cfg *config.Config) (*App, error) {
 	// создаем провайдер для storage
-	provider := mem.New()
+	provider := mem.New(cfg)
+
+	// инициализируем провайдера
+	err := provider.Init()
+	if err != nil {
+		return nil, err
+	}
 
 	// создаем сервер
 	server := server.New(provider, cfg)
 
-	return &App{Server: server}
+	return &App{Server: server}, nil
 }
 
 func (s *App) Run() error {
@@ -27,7 +32,7 @@ func (s *App) Run() error {
 	errChan := make(chan error)
 
 	// запустить сервис
-	log.Printf("start application")
+	logger.Log.Info("start application")
 
 	go func() {
 		errChan <- s.Server.Run()

@@ -1,27 +1,49 @@
 package mem
 
 import (
+	"encoding/json"
 	"errors"
+	"os"
 	"sync"
+
+	"github.com/zYoma/go-url-shortener/internal/config"
+	"github.com/zYoma/go-url-shortener/internal/logger"
 )
 
 // реализация хранилища в памяти
 type Storage struct {
-	db    map[string]string
-	mutex sync.Mutex
+	db          map[string]string
+	storagePath string
+	mutex       sync.Mutex
 }
 
-func New() *Storage {
+func New(cfg *config.Config) *Storage {
 	db := make(map[string]string)
-	return &Storage{db: db}
+	return &Storage{db: db, storagePath: cfg.StorageFile}
 }
 
 // SaveUrl to db.
-func (s *Storage) SaveURL(fullURL string, shortURL string) {
+func (s *Storage) SaveURL(fullURL string, shortURL string) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
 	s.db[shortURL] = fullURL
+
+	// обновляем нашу БД в фале
+	file, err := os.OpenFile(s.storagePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		logger.Log.Sugar().Errorf("Не удалось открыть файл файл: %s", err)
+		return err
+	}
+	defer file.Close()
+
+	// Сериализуем map в JSON и записываем в файл
+	if err := json.NewEncoder(file).Encode(&s.db); err != nil {
+		logger.Log.Sugar().Errorf("Ошибка записи в файл: %s", err)
+		return err
+	}
+
+	return nil
 }
 
 // GetUrl from db.
@@ -32,4 +54,31 @@ func (s *Storage) GetURL(shortURL string) (string, error) {
 	}
 
 	return fullURL, nil
+}
+
+// Читает данные из файла при старте приложения
+func (s *Storage) Init() error {
+	// открываем файл для чтения
+	file, err := os.OpenFile(s.storagePath, os.O_RDONLY|os.O_CREATE, 0644)
+	if err != nil {
+		logger.Log.Sugar().Errorf("Не удалось открыть файл файл: %s", err)
+		return err
+	}
+	defer file.Close()
+
+	// Получаем информацию о файле для проверки размера
+	fileInfo, err := file.Stat()
+	if err != nil {
+		logger.Log.Sugar().Errorf("Ошибка получения информации о файле: %s", err)
+		return err
+	}
+
+	if fileInfo.Size() > 0 {
+		if err := json.NewDecoder(file).Decode(&s.db); err != nil {
+			logger.Log.Sugar().Errorf("Ошибка декодирования JSON: %s", err)
+			return err
+		}
+	}
+
+	return nil
 }
