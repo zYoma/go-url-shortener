@@ -1,21 +1,10 @@
 package handlers
 
 import (
-	"errors"
-	"fmt"
-	"io"
 	"net/http"
 
-	"encoding/json"
-
 	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/render"
-	"github.com/go-playground/validator/v10"
 	"github.com/zYoma/go-url-shortener/internal/config"
-	"github.com/zYoma/go-url-shortener/internal/logger"
-	"github.com/zYoma/go-url-shortener/internal/models"
-	"github.com/zYoma/go-url-shortener/internal/services/generator"
-	"go.uber.org/zap"
 )
 
 type URLProvider interface {
@@ -34,38 +23,6 @@ func New(provider URLProvider, cfg *config.Config) *HandlerService {
 	return &HandlerService{provider: provider, cfg: cfg}
 }
 
-func (h *HandlerService) CreateURL(w http.ResponseWriter, req *http.Request) {
-	// получаем тело запроса
-	body, err := io.ReadAll(req.Body)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	// проверяем, что тело не пустое
-	originalURL := string(body)
-	if originalURL == "" {
-		http.Error(w, "URL cannot be empty", http.StatusBadRequest)
-		return
-	}
-
-	// создаем короткую ссылку
-	shortURL := generator.GenerateShortURL()
-
-	// сохраняем ссылку в хранилище
-	err = h.provider.SaveURL(originalURL, shortURL)
-	if err != nil {
-		render.JSON(w, req, models.Error("failed save link to db"))
-		return
-	}
-
-	// устанавливаем статус ответа
-	w.WriteHeader(http.StatusCreated)
-
-	// пишем ответ
-	fmt.Fprintf(w, "%s/%s", h.cfg.BaseShortURL, shortURL)
-}
-
 func (h *HandlerService) GetURL(w http.ResponseWriter, req *http.Request) {
 	// получаем идентификатор из пути
 	shortURL := chi.URLParam(req, "id")
@@ -81,82 +38,4 @@ func (h *HandlerService) GetURL(w http.ResponseWriter, req *http.Request) {
 	w.Header().Set("Location", originalURL)
 	w.WriteHeader(http.StatusTemporaryRedirect)
 
-}
-
-func (h *HandlerService) CreateShortURL(w http.ResponseWriter, r *http.Request) {
-
-	var req models.CreateShortURLRequest
-
-	w.Header().Set("Content-Type", "application/json")
-
-	// декодируем тело запроса
-	err := render.DecodeJSON(r.Body, &req)
-
-	// если тело пустое
-	if errors.Is(err, io.EOF) {
-		logger.Log.Error("request body is empty")
-		w.WriteHeader(http.StatusBadRequest)
-		render.JSON(w, r, models.Error("empty request"))
-		return
-	}
-
-	// если не удалось декодировать
-	if err != nil {
-		logger.Log.Error("cannot decode request JSON body", zap.Error(err))
-		w.WriteHeader(http.StatusBadRequest)
-		render.JSON(w, r, models.Error("failed to decode request"))
-		return
-	}
-
-	// валидируем поля
-	if err := validator.New().Struct(req); err != nil {
-		validateErr := err.(validator.ValidationErrors)
-		logger.Log.Error("request validate error", zap.Error(err))
-		w.WriteHeader(http.StatusBadRequest)
-		render.JSON(w, r, models.ValidationError(validateErr))
-		return
-	}
-
-	// создаем короткую ссылку
-	shortURL := generator.GenerateShortURL()
-
-	// сохраняем ссылку в хранилище
-	err = h.provider.SaveURL(req.URL, shortURL)
-	if err != nil {
-		render.JSON(w, r, models.Error("failed save link to db"))
-		return
-	}
-
-	// устанавливаем статус
-	w.WriteHeader(http.StatusCreated)
-
-	// сериализуем ответ сервера
-	response := models.CreateShortURLResponse{
-		Result: fmt.Sprintf("%s/%s", h.cfg.BaseShortURL, shortURL),
-	}
-
-	// Только для того, чтобы обойти проверку - iteration7_test.go:110: Не найдено использование известных библиотек кодирования JSON . Хочу использовать render
-	// render.JSON(w, r, response)
-	enc := json.NewEncoder(w)
-	if err := enc.Encode(response); err != nil {
-		logger.Log.Error("error encoding response", zap.Error(err))
-		return
-	}
-}
-
-func (h *HandlerService) GetRouter() chi.Router {
-	// создаем роутер
-	r := chi.NewRouter()
-
-	r.Use(handlerLogger)
-	r.Use(gzipMiddleware)
-
-	// добавляем маршруты
-	r.Route("/", func(r chi.Router) {
-		r.Post("/", h.CreateURL)
-		r.Post("/api/shorten", h.CreateShortURL)
-		r.Get("/{id}", h.GetURL)
-	})
-
-	return r
 }
