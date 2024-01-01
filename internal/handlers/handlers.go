@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"net/http"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/zYoma/go-url-shortener/internal/config"
 )
@@ -23,19 +21,19 @@ func New(provider URLProvider, cfg *config.Config) *HandlerService {
 	return &HandlerService{provider: provider, cfg: cfg}
 }
 
-func (h *HandlerService) GetURL(w http.ResponseWriter, req *http.Request) {
-	// получаем идентификатор из пути
-	shortURL := chi.URLParam(req, "id")
+func (h *HandlerService) GetRouter() chi.Router {
+	// создаем роутер
+	r := chi.NewRouter()
 
-	// проверяем в хранилище, есть ли урл для полученного id
-	originalURL, err := h.provider.GetURL(shortURL)
-	if err != nil {
-		http.NotFound(w, req)
-		return
-	}
+	r.Use(handlerLogger)
+	r.Use(gzipMiddleware)
 
-	// устанавливаем заголовок и пишем ответ
-	w.Header().Set("Location", originalURL)
-	w.WriteHeader(http.StatusTemporaryRedirect)
+	// добавляем маршруты
+	r.Route("/", func(r chi.Router) {
+		r.Post("/", h.CreateURL)
+		r.Post("/api/shorten", h.CreateShortURL)
+		r.Get("/{id}", h.GetURL)
+	})
 
+	return r
 }
