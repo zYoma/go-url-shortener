@@ -4,3 +4,6 @@ run:
 
 test:
 	go test ./...
+
+mock:
+	cd internal && mockery --all && cd -

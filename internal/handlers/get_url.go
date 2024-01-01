@@ -1,22 +1,24 @@
 package handlers
 
 import (
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
 )
 
-func (h *HandlerService) GetRouter() chi.Router {
-	// создаем роутер
-	r := chi.NewRouter()
+func (h *HandlerService) GetURL(w http.ResponseWriter, req *http.Request) {
+	// получаем идентификатор из пути
+	shortURL := chi.URLParam(req, "id")
 
-	r.Use(handlerLogger)
-	r.Use(gzipMiddleware)
+	// проверяем в хранилище, есть ли урл для полученного id
+	originalURL, err := h.provider.GetURL(shortURL)
+	if err != nil {
+		http.NotFound(w, req)
+		return
+	}
 
-	// добавляем маршруты
-	r.Route("/", func(r chi.Router) {
-		r.Post("/", h.CreateURL)
-		r.Post("/api/shorten", h.CreateShortURL)
-		r.Get("/{id}", h.GetURL)
-	})
+	// устанавливаем заголовок и пишем ответ
+	w.Header().Set("Location", originalURL)
+	w.WriteHeader(http.StatusTemporaryRedirect)
 
-	return r
 }
