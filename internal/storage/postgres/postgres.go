@@ -7,9 +7,10 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/zYoma/go-url-shortener/internal/config"
+	"github.com/zYoma/go-url-shortener/internal/logger"
 )
 
-var ErrCreatePool = errors.New("Unable to create connection pool")
+var ErrCreatePool = errors.New("unable to create connection pool")
 var ErrPing = errors.New("error when checking connection to the database")
 var ErrURLNotFound = errors.New("url not found")
 var ErrSaveURL = errors.New("error when saving to database")
@@ -36,6 +37,7 @@ func (s *Storage) SaveURL(ctx context.Context, fullURL string, shortURL string) 
     `, fullURL, shortURL)
 
 	if err != nil {
+		logger.Log.Sugar().Errorf("Не удалось сохранить url: %s", err)
 		return ErrSaveURL
 	}
 	return nil
