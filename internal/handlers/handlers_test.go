@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -32,7 +33,7 @@ func TestCreateURL(t *testing.T) {
 
 	providerMock := new(mocks.URLProvider)
 	// Настройка поведения мока для метода SaveURL
-	providerMock.On("SaveURL", mock.Anything, mock.Anything).Return(nil)
+	providerMock.On("SaveURL", mock.AnythingOfType("*context.valueCtx"), mock.Anything, mock.Anything).Return(nil)
 
 	service := New(providerMock, cfg)
 	r := service.GetRouter()
@@ -64,7 +65,7 @@ func TestCreateURL(t *testing.T) {
 			assert.Contains(t, string(resp.Body()), tc.expectedBody)
 
 			// Проверка вызовов методов
-			providerMock.AssertCalled(t, "SaveURL", mock.Anything, mock.Anything)
+			providerMock.AssertCalled(t, "SaveURL", mock.AnythingOfType("*context.valueCtx"), mock.Anything, mock.Anything)
 		})
 	}
 }
@@ -74,18 +75,19 @@ func TestGetURL(t *testing.T) {
 	cfg := GetMockConfig()
 	providerMock := new(mocks.URLProvider)
 	// задаем поведение для аргумента mockID и всех остальных
-	providerMock.On("GetURL", mock.AnythingOfType("string")).Return(func(shortURL string) string {
-		url := ""
-		if shortURL == mockID {
-			url = "https://httpbin.org/get"
-		}
-		return url
-	}, func(shortURL string) error {
-		if shortURL != mockID {
-			return mem.ErrURLNotFound
-		}
-		return nil
-	})
+	providerMock.On("GetURL", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("string")).Return(
+		func(ctx context.Context, shortURL string) string {
+			url := ""
+			if shortURL == mockID {
+				url = "https://httpbin.org/get"
+			}
+			return url
+		}, func(ctx context.Context, shortURL string) error {
+			if shortURL != mockID {
+				return mem.ErrURLNotFound
+			}
+			return nil
+		})
 
 	service := New(providerMock, cfg)
 	r := service.GetRouter()
@@ -128,7 +130,7 @@ func TestGetURL(t *testing.T) {
 func TestCreateShortURL(t *testing.T) {
 	cfg := GetMockConfig()
 	providerMock := new(mocks.URLProvider)
-	providerMock.On("SaveURL", mock.Anything, mock.Anything).Return(nil)
+	providerMock.On("SaveURL", mock.AnythingOfType("*context.valueCtx"), mock.Anything, mock.Anything).Return(nil)
 	service := New(providerMock, cfg)
 	r := service.GetRouter()
 	srv := httptest.NewServer(r)
@@ -172,7 +174,7 @@ func TestCreateShortURL(t *testing.T) {
 func TestGzipCompression(t *testing.T) {
 	cfg := GetMockConfig()
 	providerMock := new(mocks.URLProvider)
-	providerMock.On("SaveURL", mock.Anything, mock.Anything).Return(nil)
+	providerMock.On("SaveURL", mock.AnythingOfType("*context.valueCtx"), mock.Anything, mock.Anything).Return(nil)
 	service := New(providerMock, cfg)
 	r := service.GetRouter()
 	srv := httptest.NewServer(r)

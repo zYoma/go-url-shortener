@@ -1,6 +1,7 @@
 package mem
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"os"
@@ -23,13 +24,13 @@ type Storage struct {
 	mutex       sync.Mutex
 }
 
-func New(cfg *config.Config) *Storage {
+func New(cfg *config.Config) (*Storage, error) {
 	db := make(map[string]string)
-	return &Storage{db: db, storagePath: cfg.StorageFile}
+	return &Storage{db: db, storagePath: cfg.StorageFile}, nil
 }
 
 // SaveUrl to db.
-func (s *Storage) SaveURL(fullURL string, shortURL string) error {
+func (s *Storage) SaveURL(ctx context.Context, fullURL string, shortURL string) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -53,7 +54,7 @@ func (s *Storage) SaveURL(fullURL string, shortURL string) error {
 }
 
 // GetUrl from db.
-func (s *Storage) GetURL(shortURL string) (string, error) {
+func (s *Storage) GetURL(ctx context.Context, shortURL string) (string, error) {
 	fullURL, ok := s.db[shortURL]
 	if !ok {
 		return "", ErrURLNotFound
@@ -86,5 +87,9 @@ func (s *Storage) Init() error {
 		}
 	}
 
+	return nil
+}
+
+func (s *Storage) Ping(ctx context.Context) error {
 	return nil
 }

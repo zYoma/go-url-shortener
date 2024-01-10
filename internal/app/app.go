@@ -4,7 +4,7 @@ import (
 	"github.com/zYoma/go-url-shortener/internal/app/server"
 	"github.com/zYoma/go-url-shortener/internal/config"
 	"github.com/zYoma/go-url-shortener/internal/logger"
-	"github.com/zYoma/go-url-shortener/internal/storage/mem"
+	"github.com/zYoma/go-url-shortener/internal/storage/postgres"
 )
 
 type App struct {
@@ -13,11 +13,13 @@ type App struct {
 
 func New(cfg *config.Config) (*App, error) {
 	// создаем провайдер для storage
-	provider := mem.New(cfg)
+	provider, err := postgres.New(cfg)
+	if err != nil {
+		return nil, err
+	}
 
 	// инициализируем провайдера
-	err := provider.Init()
-	if err != nil {
+	if err := provider.Init(); err != nil {
 		return nil, err
 	}
 
