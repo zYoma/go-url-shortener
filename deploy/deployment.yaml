@@ -20,6 +20,8 @@ spec:
           image: ghcr.io/zyoma/go-url-shortener:latest
           imagePullPolicy: Always
           env:
+          - name: BASE_URL
+            value: "https://devops-zimin.shop"
           - name: DATABASE_DSN
             valueFrom:
               secretKeyRef:
