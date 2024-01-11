@@ -56,10 +56,6 @@ type ShortURL struct {
 	ShortURL      string `json:"short_url" validate:"required,short_url"`
 }
 
-type CreateListShortURLResponse struct {
-	Result *[]ShortURL `json:"result"`
-}
-
 type OriginalURL struct {
 	CorrelationID string `json:"correlation_id" validate:"required"`
 	OriginalURL   string `json:"original_url" validate:"required,url"`

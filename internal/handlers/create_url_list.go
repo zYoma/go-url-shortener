@@ -63,10 +63,6 @@ func (h *HandlerService) CreateShortListURL(w http.ResponseWriter, r *http.Reque
 
 	w.WriteHeader(http.StatusCreated)
 
-	response := models.CreateListShortURLResponse{
-		Result: &responseData,
-	}
-
-	render.JSON(w, r, response)
+	render.JSON(w, r, &responseData)
 
 }
