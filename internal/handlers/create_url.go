@@ -41,12 +41,9 @@ func (h *HandlerService) CreateURL(w http.ResponseWriter, req *http.Request) {
 	err = h.provider.SaveURL(ctx, originalURL, shortURL)
 	if err != nil {
 		if errors.Is(err, postgres.ErrConflict) {
-			resultShortUrl, _ := h.provider.GetShortURL(ctx, originalURL)
-			render.Status(req, http.StatusConflict)
-			response := models.CreateShortURLResponse{
-				Result: fmt.Sprintf("%s/%s", h.cfg.BaseShortURL, resultShortUrl),
-			}
-			render.JSON(w, req, response)
+			resultShortURL, _ := h.provider.GetShortURL(ctx, originalURL)
+			w.WriteHeader(http.StatusConflict)
+			fmt.Fprintf(w, "%s/%s", h.cfg.BaseShortURL, resultShortURL)
 			return
 		}
 		render.JSON(w, req, models.Error("failed save link to db"))
@@ -103,12 +100,9 @@ func (h *HandlerService) CreateShortURL(w http.ResponseWriter, r *http.Request) 
 	err = h.provider.SaveURL(ctx, req.URL, shortURL)
 	if err != nil {
 		if errors.Is(err, postgres.ErrConflict) {
-			resultShortUrl, _ := h.provider.GetShortURL(ctx, req.URL)
-			render.Status(r, http.StatusConflict)
-			response := models.CreateShortURLResponse{
-				Result: fmt.Sprintf("%s/%s", h.cfg.BaseShortURL, resultShortUrl),
-			}
-			render.JSON(w, r, response)
+			resultShortURL, _ := h.provider.GetShortURL(ctx, req.URL)
+			w.WriteHeader(http.StatusConflict)
+			fmt.Fprintf(w, "%s/%s", h.cfg.BaseShortURL, resultShortURL)
 			return
 		}
 

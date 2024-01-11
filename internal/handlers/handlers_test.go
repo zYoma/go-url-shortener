@@ -158,7 +158,7 @@ func TestCreateShortURL(t *testing.T) {
 		{name: "невалидный json", method: http.MethodPost, body: `{"url": "http://ya.ru",}`, expectedCode: http.StatusBadRequest, expectedBody: "failed to decode request"},
 		{name: "невалидный url", method: http.MethodPost, body: `{"url": "ya.ru"}`, expectedCode: http.StatusBadRequest, expectedBody: "is not a valid URL"},
 		{name: "не передан url", method: http.MethodPost, body: `{}`, expectedCode: http.StatusBadRequest, expectedBody: "URL is a required field"},
-		{name: "не передан url", method: http.MethodPost, body: `{"url": "http://mail.ru"}`, expectedCode: http.StatusConflict, expectedBody: "conflict"},
+		{name: "url уже существует в БД", method: http.MethodPost, body: `{"url": "http://mail.ru"}`, expectedCode: http.StatusConflict, expectedBody: "conflict"},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
