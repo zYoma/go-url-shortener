@@ -7,7 +7,9 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/jackc/pgerrcode"
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/zYoma/go-url-shortener/internal/config"
 	"github.com/zYoma/go-url-shortener/internal/logger"
@@ -20,6 +22,7 @@ var ErrPing = errors.New("error when checking connection to the database")
 var ErrURLNotFound = errors.New("url not found")
 var ErrSaveURL = errors.New("error when saving to database")
 var ErrCreateTable = errors.New("error creating tables")
+var ErrConflict = errors.New("url already exist")
 
 type Storage struct {
 	pool  *pgxpool.Pool
@@ -39,14 +42,29 @@ func (s *Storage) SaveURL(ctx context.Context, fullURL string, shortURL string) 
 	defer s.mutex.Unlock()
 
 	_, err := s.pool.Exec(ctx, `
-        INSERT INTO url (full_url, short_url) VALUES ($1, $2);
+        INSERT INTO url (full_url, short_url) VALUES ($1, $2) ;
     `, fullURL, shortURL)
 
 	if err != nil {
+		var pgErr *pgconn.PgError
+		if errors.As(err, &pgErr) && pgerrcode.IsIntegrityConstraintViolation(pgErr.Code) {
+			return ErrConflict
+		}
 		logger.Log.Sugar().Errorf("Не удалось сохранить url: %s", err)
 		return ErrSaveURL
 	}
 	return nil
+}
+
+func (s *Storage) GetShortURL(ctx context.Context, fullURL string) (string, error) {
+	var shortURL string
+	row := s.pool.QueryRow(ctx, `SELECT short_url FROM url WHERE full_url = $1`, fullURL)
+	err := row.Scan(&shortURL)
+	if err != nil {
+		return "", ErrURLNotFound
+	}
+
+	return shortURL, nil
 }
 
 func (s *Storage) GetURL(ctx context.Context, shortURL string) (string, error) {
@@ -72,7 +90,7 @@ func (s *Storage) Init() error {
 
 	defer tx.Rollback(ctx)
 
-	tx.Exec(context.TODO(), `
+	tx.Exec(ctx, `
 		CREATE TABLE IF NOT EXISTS url (
 			"id" SERIAL PRIMARY KEY,
 			"full_url" VARCHAR(250) NOT NULL,
@@ -80,6 +98,8 @@ func (s *Storage) Init() error {
 			"created" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 		);
     `)
+
+	tx.Exec(ctx, `CREATE UNIQUE INDEX IF NOT EXISTS idx_full_url_unique ON url(full_url);`)
 
 	return tx.Commit(ctx)
 }
@@ -110,5 +130,6 @@ func (s *Storage) BulkSaveURL(ctx context.Context, data *[]models.InsertData) er
 		logger.Log.Sugar().Errorf("Не удалось сохранить url: %s", err)
 		return ErrSaveURL
 	}
+
 	return nil
 }

@@ -32,6 +32,34 @@ func (_m *URLProvider) BulkSaveURL(ctx context.Context, data *[]models.InsertDat
 	return r0
 }
 
+// GetShortURL provides a mock function with given fields: ctx, shortURL
+func (_m *URLProvider) GetShortURL(ctx context.Context, shortURL string) (string, error) {
+	ret := _m.Called(ctx, shortURL)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetShortURL")
+	}
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {
+		return rf(ctx, shortURL)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
+		r0 = rf(ctx, shortURL)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, shortURL)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // GetURL provides a mock function with given fields: ctx, shortURL
 func (_m *URLProvider) GetURL(ctx context.Context, shortURL string) (string, error) {
 	ret := _m.Called(ctx, shortURL)

@@ -53,6 +53,17 @@ func (s *Storage) GetURL(ctx context.Context, shortURL string) (string, error) {
 	return fullURL, nil
 }
 
+func (s *Storage) GetShortURL(ctx context.Context, fullURL string) (string, error) {
+	for shortURL, u := range s.db {
+		if u == fullURL {
+			return shortURL, nil
+		}
+	}
+
+	return "", ErrURLNotFound
+
+}
+
 // Читает данные из файла при старте приложения
 func (s *Storage) Init() error {
 	// открываем файл для чтения
