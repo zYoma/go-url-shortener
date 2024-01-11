@@ -21,7 +21,7 @@ func (h *HandlerService) CreateShortListURL(w http.ResponseWriter, r *http.Reque
 	w.Header().Set("Content-Type", "application/json")
 	err := render.DecodeJSON(r.Body, &req)
 
-	if errors.Is(err, io.EOF) {
+	if errors.Is(err, io.EOF) || len(req) == 0 {
 		logger.Log.Error("request body is empty")
 		w.WriteHeader(http.StatusBadRequest)
 		render.JSON(w, r, models.Error("empty request"))
