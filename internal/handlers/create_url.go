@@ -102,7 +102,10 @@ func (h *HandlerService) CreateShortURL(w http.ResponseWriter, r *http.Request) 
 		if errors.Is(err, postgres.ErrConflict) {
 			resultShortURL, _ := h.provider.GetShortURL(ctx, req.URL)
 			w.WriteHeader(http.StatusConflict)
-			fmt.Fprintf(w, "%s/%s", h.cfg.BaseShortURL, resultShortURL)
+			response := models.CreateShortURLResponse{
+				Result: fmt.Sprintf("%s/%s", h.cfg.BaseShortURL, resultShortURL),
+			}
+			render.JSON(w, r, response)
 			return
 		}
 
