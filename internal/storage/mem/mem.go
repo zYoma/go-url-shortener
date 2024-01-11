@@ -9,6 +9,7 @@ import (
 
 	"github.com/zYoma/go-url-shortener/internal/config"
 	"github.com/zYoma/go-url-shortener/internal/logger"
+	"github.com/zYoma/go-url-shortener/internal/storage"
 )
 
 var ErrURLNotFound = errors.New("url not found")
@@ -24,7 +25,7 @@ type Storage struct {
 	mutex       sync.Mutex
 }
 
-func New(cfg *config.Config) (*Storage, error) {
+func New(cfg *config.Config) (storage.StorageProvider, error) {
 	db := make(map[string]string)
 	return &Storage{db: db, storagePath: cfg.StorageFile}, nil
 }

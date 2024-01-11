@@ -1,26 +1,17 @@
 package handlers
 
 import (
-	"context"
-
 	"github.com/go-chi/chi/v5"
 	"github.com/zYoma/go-url-shortener/internal/config"
+	"github.com/zYoma/go-url-shortener/internal/storage"
 )
 
-type URLProvider interface {
-	SaveURL(ctx context.Context, fullURL string, shortURL string) error
-	GetURL(ctx context.Context, shortURL string) (string, error)
-	Init() error
-	Ping(ctx context.Context) error
-}
-
-// не уверен в нейминге
 type HandlerService struct {
-	provider URLProvider
+	provider storage.URLProvider
 	cfg      *config.Config
 }
 
-func New(provider URLProvider, cfg *config.Config) *HandlerService {
+func New(provider storage.URLProvider, cfg *config.Config) *HandlerService {
 	return &HandlerService{provider: provider, cfg: cfg}
 }
 

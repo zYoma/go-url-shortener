@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/zYoma/go-url-shortener/internal/config"
 	"github.com/zYoma/go-url-shortener/internal/logger"
+	"github.com/zYoma/go-url-shortener/internal/storage"
 )
 
 var ErrCreatePool = errors.New("unable to create connection pool")
@@ -20,7 +21,7 @@ type Storage struct {
 	mutex sync.Mutex
 }
 
-func New(cfg *config.Config) (*Storage, error) {
+func New(cfg *config.Config) (storage.StorageProvider, error) {
 	dbpool, err := pgxpool.New(context.Background(), cfg.DSN)
 	if err != nil {
 		return nil, ErrCreatePool

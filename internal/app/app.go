@@ -4,6 +4,8 @@ import (
 	"github.com/zYoma/go-url-shortener/internal/app/server"
 	"github.com/zYoma/go-url-shortener/internal/config"
 	"github.com/zYoma/go-url-shortener/internal/logger"
+	"github.com/zYoma/go-url-shortener/internal/storage"
+	"github.com/zYoma/go-url-shortener/internal/storage/mem"
 	"github.com/zYoma/go-url-shortener/internal/storage/postgres"
 )
 
@@ -13,7 +15,7 @@ type App struct {
 
 func New(cfg *config.Config) (*App, error) {
 	// создаем провайдер для storage
-	provider, err := postgres.New(cfg)
+	provider, err := StorageConstructor(cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -47,4 +49,14 @@ func (s *App) Run() error {
 
 	return nil
 
+}
+
+// в зависимости от конфигурации, выбирает провайдера
+func StorageConstructor(cfg *config.Config) (storage.StorageProvider, error) {
+	if cfg.DSN != "" {
+		logger.Log.Sugar().Infof("провайдер - postgres")
+		return postgres.New(cfg)
+	}
+	logger.Log.Sugar().Infof("провайдер - mem")
+	return mem.New(cfg)
 }
