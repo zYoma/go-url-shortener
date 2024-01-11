@@ -15,6 +15,7 @@ var ErrCreatePool = errors.New("unable to create connection pool")
 var ErrPing = errors.New("error when checking connection to the database")
 var ErrURLNotFound = errors.New("url not found")
 var ErrSaveURL = errors.New("error when saving to database")
+var ErrCreateTable = errors.New("error creating tables")
 
 type Storage struct {
 	pool  *pgxpool.Pool
@@ -56,11 +57,24 @@ func (s *Storage) GetURL(ctx context.Context, shortURL string) (string, error) {
 }
 
 func (s *Storage) Init() error {
+	_, err := s.pool.Exec(context.TODO(), `
+		CREATE TABLE IF NOT EXISTS url (
+			"id" SERIAL PRIMARY KEY,
+			"full_url" VARCHAR(250) NOT NULL,
+			"short_url" VARCHAR(250) NOT NULL,
+			"created" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+		);
+    `)
+
+	if err != nil {
+		logger.Log.Sugar().Errorf("Не удалось создать таблицу: %s", err)
+		return ErrCreateTable
+	}
 	return nil
 }
 
 func (s *Storage) Ping(ctx context.Context) error {
-	if err := s.pool.Ping(context.TODO()); err != nil {
+	if err := s.pool.Ping(ctx); err != nil {
 		return ErrPing
 	}
 	return nil
