@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 
@@ -50,7 +51,7 @@ func (h *HandlerService) CreateShortListURL(w http.ResponseWriter, r *http.Reque
 	for _, url := range req {
 		shortURL := generator.GenerateShortURL()
 		insertData = append(insertData, models.InsertData{OriginalURL: url.OriginalURL, ShortURL: shortURL})
-		responseData = append(responseData, models.ShortURL{CorrelationID: url.CorrelationID, ShortURL: shortURL})
+		responseData = append(responseData, models.ShortURL{CorrelationID: url.CorrelationID, ShortURL: fmt.Sprintf("%s/%s", h.cfg.BaseShortURL, shortURL)})
 	}
 
 	ctx := r.Context()
