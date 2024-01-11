@@ -3,11 +3,15 @@ package postgres
 import (
 	"context"
 	"errors"
+	"fmt"
+	"strings"
 	"sync"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/zYoma/go-url-shortener/internal/config"
 	"github.com/zYoma/go-url-shortener/internal/logger"
+	"github.com/zYoma/go-url-shortener/internal/models"
 	"github.com/zYoma/go-url-shortener/internal/storage"
 )
 
@@ -57,7 +61,18 @@ func (s *Storage) GetURL(ctx context.Context, shortURL string) (string, error) {
 }
 
 func (s *Storage) Init() error {
-	_, err := s.pool.Exec(context.TODO(), `
+	ctx := context.Background()
+	txOptions := pgx.TxOptions{}
+
+	tx, err := s.pool.BeginTx(ctx, txOptions)
+	if err != nil {
+		logger.Log.Sugar().Errorf("Не удалось создать таблицу: %s", err)
+		return ErrCreateTable
+	}
+
+	defer tx.Rollback(ctx)
+
+	tx.Exec(context.TODO(), `
 		CREATE TABLE IF NOT EXISTS url (
 			"id" SERIAL PRIMARY KEY,
 			"full_url" VARCHAR(250) NOT NULL,
@@ -66,16 +81,34 @@ func (s *Storage) Init() error {
 		);
     `)
 
-	if err != nil {
-		logger.Log.Sugar().Errorf("Не удалось создать таблицу: %s", err)
-		return ErrCreateTable
-	}
-	return nil
+	return tx.Commit(ctx)
 }
 
 func (s *Storage) Ping(ctx context.Context) error {
 	if err := s.pool.Ping(ctx); err != nil {
 		return ErrPing
+	}
+	return nil
+}
+
+func (s *Storage) BulkSaveURL(ctx context.Context, data *[]models.InsertData) error {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	realData := *data
+
+	// Построение строки SQL для вставки
+	sqlValues := make([]string, len(realData))
+	for i, d := range realData {
+		sqlValues[i] = fmt.Sprintf("('%s', '%s')", d.OriginalURL, d.ShortURL)
+	}
+
+	query := fmt.Sprintf("INSERT INTO url (full_url, short_url) VALUES %s;", strings.Join(sqlValues, ", "))
+
+	_, err := s.pool.Exec(ctx, query)
+	if err != nil {
+		logger.Log.Sugar().Errorf("Не удалось сохранить url: %s", err)
+		return ErrSaveURL
 	}
 	return nil
 }

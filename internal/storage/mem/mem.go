@@ -9,6 +9,7 @@ import (
 
 	"github.com/zYoma/go-url-shortener/internal/config"
 	"github.com/zYoma/go-url-shortener/internal/logger"
+	"github.com/zYoma/go-url-shortener/internal/models"
 	"github.com/zYoma/go-url-shortener/internal/storage"
 )
 
@@ -37,19 +38,7 @@ func (s *Storage) SaveURL(ctx context.Context, fullURL string, shortURL string) 
 
 	s.db[shortURL] = fullURL
 
-	// обновляем нашу БД в фале
-	file, err := os.OpenFile(s.storagePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-	if err != nil {
-		logger.Log.Sugar().Errorf("Не удалось открыть файл: %s", err)
-		return ErrOpenFile
-	}
-	defer file.Close()
-
-	// Сериализуем map в JSON и записываем в файл
-	if err := json.NewEncoder(file).Encode(&s.db); err != nil {
-		logger.Log.Sugar().Errorf("Ошибка записи в файл: %s", err)
-		return ErrWriteFile
-	}
+	s.saveFile()
 
 	return nil
 }
@@ -92,5 +81,40 @@ func (s *Storage) Init() error {
 }
 
 func (s *Storage) Ping(ctx context.Context) error {
+	return nil
+}
+
+func (s *Storage) BulkSaveURL(ctx context.Context, data *[]models.InsertData) error {
+	for _, url := range *data {
+		select {
+		case <-ctx.Done():
+			// Операция отменена, возвращаем ошибку или обрабатываем отмену
+			return ctx.Err()
+		default:
+			// Продолжаем выполнение операции
+			s.db[url.ShortURL] = url.OriginalURL
+		}
+	}
+
+	s.saveFile()
+
+	return nil
+}
+
+func (s *Storage) saveFile() error {
+	// обновляем нашу БД в фале
+	file, err := os.OpenFile(s.storagePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		logger.Log.Sugar().Errorf("Не удалось открыть файл: %s", err)
+		return ErrOpenFile
+	}
+	defer file.Close()
+
+	// Сериализуем map в JSON и записываем в файл
+	if err := json.NewEncoder(file).Encode(&s.db); err != nil {
+		logger.Log.Sugar().Errorf("Ошибка записи в файл: %s", err)
+		return ErrWriteFile
+	}
+
 	return nil
 }

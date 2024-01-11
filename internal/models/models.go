@@ -50,3 +50,22 @@ type CreateShortURLRequest struct {
 type CreateShortURLResponse struct {
 	Result string `json:"result"`
 }
+
+type ShortURL struct {
+	CorrelationID string `json:"correlation_id" validate:"required,correlation_id"`
+	ShortURL      string `json:"short_url" validate:"required,short_url"`
+}
+
+type CreateListShortURLResponse struct {
+	Result *[]ShortURL `json:"result"`
+}
+
+type OriginalURL struct {
+	CorrelationID string `json:"correlation_id" validate:"required"`
+	OriginalURL   string `json:"original_url" validate:"required,url"`
+}
+
+type InsertData struct {
+	OriginalURL string
+	ShortURL    string
+}
