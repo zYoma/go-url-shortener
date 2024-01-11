@@ -7,3 +7,4 @@ test:
 
 mock:
 	cd internal && mockery --all && cd -
+	
