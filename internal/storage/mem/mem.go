@@ -95,16 +95,9 @@ func (s *Storage) Ping(ctx context.Context) error {
 	return nil
 }
 
-func (s *Storage) BulkSaveURL(ctx context.Context, data *[]models.InsertData) error {
-	for _, url := range *data {
-		select {
-		case <-ctx.Done():
-			// Операция отменена, возвращаем ошибку или обрабатываем отмену
-			return ctx.Err()
-		default:
-			// Продолжаем выполнение операции
-			s.db[url.ShortURL] = url.OriginalURL
-		}
+func (s *Storage) BulkSaveURL(ctx context.Context, data []models.InsertData) error {
+	for _, url := range data {
+		s.db[url.ShortURL] = url.OriginalURL
 	}
 
 	s.saveFile()

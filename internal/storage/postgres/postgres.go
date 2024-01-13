@@ -111,21 +111,26 @@ func (s *Storage) Ping(ctx context.Context) error {
 	return nil
 }
 
-func (s *Storage) BulkSaveURL(ctx context.Context, data *[]models.InsertData) error {
+func (s *Storage) BulkSaveURL(ctx context.Context, data []models.InsertData) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	realData := *data
-
-	// Построение строки SQL для вставки
-	sqlValues := make([]string, len(realData))
-	for i, d := range realData {
-		sqlValues[i] = fmt.Sprintf("('%s', '%s')", d.OriginalURL, d.ShortURL)
+	// Проверка на пустой слайс
+	if len(data) == 0 {
+		return nil
 	}
 
-	query := fmt.Sprintf("INSERT INTO url (full_url, short_url) VALUES %s;", strings.Join(sqlValues, ", "))
+	// Начало подготовки запроса
+	valueStrings := make([]string, 0, len(data))
+	valueArgs := make([]interface{}, 0, len(data)*2)
+	for i, d := range data {
+		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d)", i*2+1, i*2+2))
+		valueArgs = append(valueArgs, d.OriginalURL, d.ShortURL)
+	}
 
-	_, err := s.pool.Exec(ctx, query)
+	// Формирование и выполнение запроса
+	stmt := fmt.Sprintf("INSERT INTO url (full_url, short_url) VALUES %s", strings.Join(valueStrings, ","))
+	_, err := s.pool.Exec(ctx, stmt, valueArgs...)
 	if err != nil {
 		logger.Log.Sugar().Errorf("Не удалось сохранить url: %s", err)
 		return ErrSaveURL

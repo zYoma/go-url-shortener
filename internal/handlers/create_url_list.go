@@ -56,7 +56,7 @@ func (h *HandlerService) CreateShortListURL(w http.ResponseWriter, r *http.Reque
 
 	ctx := r.Context()
 
-	err = h.provider.BulkSaveURL(ctx, &insertData)
+	err = h.provider.BulkSaveURL(ctx, insertData)
 	if err != nil {
 		render.JSON(w, r, models.Error("failed save link to db"))
 		return

@@ -15,7 +15,7 @@ type URLProvider struct {
 }
 
 // BulkSaveURL provides a mock function with given fields: ctx, data
-func (_m *URLProvider) BulkSaveURL(ctx context.Context, data *[]models.InsertData) error {
+func (_m *URLProvider) BulkSaveURL(ctx context.Context, data []models.InsertData) error {
 	ret := _m.Called(ctx, data)
 
 	if len(ret) == 0 {
@@ -23,7 +23,7 @@ func (_m *URLProvider) BulkSaveURL(ctx context.Context, data *[]models.InsertDat
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, *[]models.InsertData) error); ok {
+	if rf, ok := ret.Get(0).(func(context.Context, []models.InsertData) error); ok {
 		r0 = rf(ctx, data)
 	} else {
 		r0 = ret.Error(0)
