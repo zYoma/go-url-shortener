@@ -5,13 +5,13 @@ metadata:
   name: backend-ingress
   annotations:
     kubernetes.io/ingress.class: "nginx"
-    cert-manager.io/cluster-issuer: "letsencrypt"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
 spec:
   ingressClassName: "nginx"
   tls:
     - hosts:
         - "devops-zimin.shop"
-      secretName: letsencrypt
+      secretName: devops-zimin.cert
   rules:
     - host: "devops-zimin.shop"
       http:
