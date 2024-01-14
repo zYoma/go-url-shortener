@@ -19,8 +19,5 @@ func (h *HandlerService) GetURL(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	// устанавливаем заголовок и пишем ответ
-	w.Header().Set("Location", originalURL)
-	w.WriteHeader(http.StatusTemporaryRedirect)
-
+	http.Redirect(w, req, originalURL, http.StatusTemporaryRedirect)
 }
