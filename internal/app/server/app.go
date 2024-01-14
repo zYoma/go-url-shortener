@@ -5,6 +5,7 @@ import (
 
 	"github.com/zYoma/go-url-shortener/internal/config"
 	"github.com/zYoma/go-url-shortener/internal/handlers"
+	"github.com/zYoma/go-url-shortener/internal/storage"
 )
 
 type HTTPServer struct {
@@ -12,7 +13,7 @@ type HTTPServer struct {
 }
 
 func New(
-	provider handlers.URLProvider,
+	provider storage.URLProvider,
 	cfg *config.Config,
 ) *HTTPServer {
 

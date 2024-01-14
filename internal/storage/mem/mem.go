@@ -1,6 +1,7 @@
 package mem
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"os"
@@ -8,6 +9,8 @@ import (
 
 	"github.com/zYoma/go-url-shortener/internal/config"
 	"github.com/zYoma/go-url-shortener/internal/logger"
+	"github.com/zYoma/go-url-shortener/internal/models"
+	"github.com/zYoma/go-url-shortener/internal/storage"
 )
 
 var ErrURLNotFound = errors.New("url not found")
@@ -23,43 +26,42 @@ type Storage struct {
 	mutex       sync.Mutex
 }
 
-func New(cfg *config.Config) *Storage {
+func New(cfg *config.Config) (storage.StorageProvider, error) {
 	db := make(map[string]string)
-	return &Storage{db: db, storagePath: cfg.StorageFile}
+	return &Storage{db: db, storagePath: cfg.StorageFile}, nil
 }
 
 // SaveUrl to db.
-func (s *Storage) SaveURL(fullURL string, shortURL string) error {
+func (s *Storage) SaveURL(ctx context.Context, fullURL string, shortURL string) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
 	s.db[shortURL] = fullURL
 
-	// обновляем нашу БД в фале
-	file, err := os.OpenFile(s.storagePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
-	if err != nil {
-		logger.Log.Sugar().Errorf("Не удалось открыть файл: %s", err)
-		return ErrOpenFile
-	}
-	defer file.Close()
-
-	// Сериализуем map в JSON и записываем в файл
-	if err := json.NewEncoder(file).Encode(&s.db); err != nil {
-		logger.Log.Sugar().Errorf("Ошибка записи в файл: %s", err)
-		return ErrWriteFile
-	}
+	s.saveFile()
 
 	return nil
 }
 
 // GetUrl from db.
-func (s *Storage) GetURL(shortURL string) (string, error) {
+func (s *Storage) GetURL(ctx context.Context, shortURL string) (string, error) {
 	fullURL, ok := s.db[shortURL]
 	if !ok {
 		return "", ErrURLNotFound
 	}
 
 	return fullURL, nil
+}
+
+func (s *Storage) GetShortURL(ctx context.Context, fullURL string) (string, error) {
+	for shortURL, u := range s.db {
+		if u == fullURL {
+			return shortURL, nil
+		}
+	}
+
+	return "", ErrURLNotFound
+
 }
 
 // Читает данные из файла при старте приложения
@@ -84,6 +86,38 @@ func (s *Storage) Init() error {
 			logger.Log.Sugar().Errorf("Ошибка декодирования JSON: %s", err)
 			return ErrDecodeFile
 		}
+	}
+
+	return nil
+}
+
+func (s *Storage) Ping(ctx context.Context) error {
+	return nil
+}
+
+func (s *Storage) BulkSaveURL(ctx context.Context, data []models.InsertData) error {
+	for _, url := range data {
+		s.db[url.ShortURL] = url.OriginalURL
+	}
+
+	s.saveFile()
+
+	return nil
+}
+
+func (s *Storage) saveFile() error {
+	// обновляем нашу БД в фале
+	file, err := os.OpenFile(s.storagePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0644)
+	if err != nil {
+		logger.Log.Sugar().Errorf("Не удалось открыть файл: %s", err)
+		return ErrOpenFile
+	}
+	defer file.Close()
+
+	// Сериализуем map в JSON и записываем в файл
+	if err := json.NewEncoder(file).Encode(&s.db); err != nil {
+		logger.Log.Sugar().Errorf("Ошибка записи в файл: %s", err)
+		return ErrWriteFile
 	}
 
 	return nil

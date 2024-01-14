@@ -3,6 +3,7 @@ package handlers
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -17,6 +18,7 @@ import (
 	"github.com/zYoma/go-url-shortener/internal/config"
 	"github.com/zYoma/go-url-shortener/internal/mocks"
 	"github.com/zYoma/go-url-shortener/internal/storage/mem"
+	"github.com/zYoma/go-url-shortener/internal/storage/postgres"
 )
 
 func GetMockConfig() *config.Config {
@@ -32,7 +34,7 @@ func TestCreateURL(t *testing.T) {
 
 	providerMock := new(mocks.URLProvider)
 	// Настройка поведения мока для метода SaveURL
-	providerMock.On("SaveURL", mock.Anything, mock.Anything).Return(nil)
+	providerMock.On("SaveURL", mock.AnythingOfType("*context.valueCtx"), mock.Anything, mock.Anything).Return(nil)
 
 	service := New(providerMock, cfg)
 	r := service.GetRouter()
@@ -64,7 +66,7 @@ func TestCreateURL(t *testing.T) {
 			assert.Contains(t, string(resp.Body()), tc.expectedBody)
 
 			// Проверка вызовов методов
-			providerMock.AssertCalled(t, "SaveURL", mock.Anything, mock.Anything)
+			providerMock.AssertCalled(t, "SaveURL", mock.AnythingOfType("*context.valueCtx"), mock.Anything, mock.Anything)
 		})
 	}
 }
@@ -74,18 +76,19 @@ func TestGetURL(t *testing.T) {
 	cfg := GetMockConfig()
 	providerMock := new(mocks.URLProvider)
 	// задаем поведение для аргумента mockID и всех остальных
-	providerMock.On("GetURL", mock.AnythingOfType("string")).Return(func(shortURL string) string {
-		url := ""
-		if shortURL == mockID {
-			url = "https://httpbin.org/get"
-		}
-		return url
-	}, func(shortURL string) error {
-		if shortURL != mockID {
-			return mem.ErrURLNotFound
-		}
-		return nil
-	})
+	providerMock.On("GetURL", mock.AnythingOfType("*context.valueCtx"), mock.AnythingOfType("string")).Return(
+		func(ctx context.Context, shortURL string) string {
+			url := ""
+			if shortURL == mockID {
+				url = "https://httpbin.org/get"
+			}
+			return url
+		}, func(ctx context.Context, shortURL string) error {
+			if shortURL != mockID {
+				return mem.ErrURLNotFound
+			}
+			return nil
+		})
 
 	service := New(providerMock, cfg)
 	r := service.GetRouter()
@@ -128,7 +131,16 @@ func TestGetURL(t *testing.T) {
 func TestCreateShortURL(t *testing.T) {
 	cfg := GetMockConfig()
 	providerMock := new(mocks.URLProvider)
-	providerMock.On("SaveURL", mock.Anything, mock.Anything).Return(nil)
+	providerMock.On("SaveURL", mock.AnythingOfType("*context.valueCtx"), mock.Anything, mock.Anything).Return(
+		func(ctx context.Context, fullURL string, shortURL string) error {
+			if fullURL == "http://mail.ru" {
+				return postgres.ErrConflict
+			}
+			return nil
+		},
+	)
+	providerMock.On("GetShortURL", mock.AnythingOfType("*context.valueCtx"), mock.Anything).Return("conflict", nil)
+
 	service := New(providerMock, cfg)
 	r := service.GetRouter()
 	srv := httptest.NewServer(r)
@@ -146,6 +158,7 @@ func TestCreateShortURL(t *testing.T) {
 		{name: "невалидный json", method: http.MethodPost, body: `{"url": "http://ya.ru",}`, expectedCode: http.StatusBadRequest, expectedBody: "failed to decode request"},
 		{name: "невалидный url", method: http.MethodPost, body: `{"url": "ya.ru"}`, expectedCode: http.StatusBadRequest, expectedBody: "is not a valid URL"},
 		{name: "не передан url", method: http.MethodPost, body: `{}`, expectedCode: http.StatusBadRequest, expectedBody: "URL is a required field"},
+		{name: "url уже существует в БД", method: http.MethodPost, body: `{"url": "http://mail.ru"}`, expectedCode: http.StatusConflict, expectedBody: "conflict"},
 	}
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
@@ -172,7 +185,7 @@ func TestCreateShortURL(t *testing.T) {
 func TestGzipCompression(t *testing.T) {
 	cfg := GetMockConfig()
 	providerMock := new(mocks.URLProvider)
-	providerMock.On("SaveURL", mock.Anything, mock.Anything).Return(nil)
+	providerMock.On("SaveURL", mock.AnythingOfType("*context.valueCtx"), mock.Anything, mock.Anything).Return(nil)
 	service := New(providerMock, cfg)
 	r := service.GetRouter()
 	srv := httptest.NewServer(r)

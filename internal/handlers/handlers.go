@@ -3,21 +3,15 @@ package handlers
 import (
 	"github.com/go-chi/chi/v5"
 	"github.com/zYoma/go-url-shortener/internal/config"
+	"github.com/zYoma/go-url-shortener/internal/storage"
 )
 
-type URLProvider interface {
-	SaveURL(fullURL string, shortURL string) error
-	GetURL(shortURL string) (string, error)
-	Init() error
-}
-
-// не уверен в нейминге
 type HandlerService struct {
-	provider URLProvider
+	provider storage.URLProvider
 	cfg      *config.Config
 }
 
-func New(provider URLProvider, cfg *config.Config) *HandlerService {
+func New(provider storage.URLProvider, cfg *config.Config) *HandlerService {
 	return &HandlerService{provider: provider, cfg: cfg}
 }
 
@@ -33,6 +27,8 @@ func (h *HandlerService) GetRouter() chi.Router {
 		r.Post("/", h.CreateURL)
 		r.Post("/api/shorten", h.CreateShortURL)
 		r.Get("/{id}", h.GetURL)
+		r.Get("/ping", h.Ping)
+		r.Post("/api/shorten/batch", h.CreateShortListURL)
 	})
 
 	return r

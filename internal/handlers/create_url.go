@@ -13,6 +13,7 @@ import (
 	"github.com/zYoma/go-url-shortener/internal/logger"
 	"github.com/zYoma/go-url-shortener/internal/models"
 	"github.com/zYoma/go-url-shortener/internal/services/generator"
+	"github.com/zYoma/go-url-shortener/internal/storage/postgres"
 	"go.uber.org/zap"
 )
 
@@ -34,9 +35,17 @@ func (h *HandlerService) CreateURL(w http.ResponseWriter, req *http.Request) {
 	// создаем короткую ссылку
 	shortURL := generator.GenerateShortURL()
 
+	ctx := req.Context()
+
 	// сохраняем ссылку в хранилище
-	err = h.provider.SaveURL(originalURL, shortURL)
+	err = h.provider.SaveURL(ctx, originalURL, shortURL)
 	if err != nil {
+		if errors.Is(err, postgres.ErrConflict) {
+			resultShortURL, _ := h.provider.GetShortURL(ctx, originalURL)
+			w.WriteHeader(http.StatusConflict)
+			fmt.Fprintf(w, "%s/%s", h.cfg.BaseShortURL, resultShortURL)
+			return
+		}
 		render.JSON(w, req, models.Error("failed save link to db"))
 		return
 	}
@@ -85,9 +94,21 @@ func (h *HandlerService) CreateShortURL(w http.ResponseWriter, r *http.Request) 
 	// создаем короткую ссылку
 	shortURL := generator.GenerateShortURL()
 
+	ctx := r.Context()
+
 	// сохраняем ссылку в хранилище
-	err = h.provider.SaveURL(req.URL, shortURL)
+	err = h.provider.SaveURL(ctx, req.URL, shortURL)
 	if err != nil {
+		if errors.Is(err, postgres.ErrConflict) {
+			resultShortURL, _ := h.provider.GetShortURL(ctx, req.URL)
+			w.WriteHeader(http.StatusConflict)
+			response := models.CreateShortURLResponse{
+				Result: fmt.Sprintf("%s/%s", h.cfg.BaseShortURL, resultShortURL),
+			}
+			render.JSON(w, r, response)
+			return
+		}
+
 		render.JSON(w, r, models.Error("failed save link to db"))
 		return
 	}

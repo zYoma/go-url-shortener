@@ -19,6 +19,14 @@ spec:
         - name: backend
           image: ghcr.io/zyoma/go-url-shortener:latest
           imagePullPolicy: Always
+          env:
+          - name: BASE_URL
+            value: "https://devops-zimin.shop"
+          - name: DATABASE_DSN
+            valueFrom:
+              secretKeyRef:
+                name: db-dsn
+                key: dsn
           ports:
             - name: backend
               containerPort: 8080
