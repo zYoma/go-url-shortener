@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"time"
@@ -17,7 +16,7 @@ import (
 func (h *HandlerService) DeleteShortListURL(w http.ResponseWriter, req *http.Request) {
 	userID, _ := req.Context().Value(UserIDKey).(string)
 	var listURL []string
-	fmt.Printf(userID)
+
 	err := render.DecodeJSON(req.Body, &listURL)
 
 	if errors.Is(err, io.EOF) {
