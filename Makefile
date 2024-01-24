@@ -1,6 +1,6 @@
 
 run:
-	go run cmd/shortener/main.go -d postgresql://postgres:postgres@127.0.0.1:9432/shorther
+	go run cmd/shortener/main.go 
 
 test:
 	go test ./...

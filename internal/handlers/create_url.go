@@ -63,7 +63,7 @@ func (h *HandlerService) CreateURL(w http.ResponseWriter, req *http.Request) {
 }
 
 func (h *HandlerService) CreateShortURL(w http.ResponseWriter, r *http.Request) {
-
+	fmt.Printf("Произошла ошибка")
 	var req models.CreateShortURLRequest
 
 	w.Header().Set("Content-Type", "application/json")

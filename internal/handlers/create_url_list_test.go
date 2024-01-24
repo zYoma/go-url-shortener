@@ -54,7 +54,7 @@ func TestCreateListURL(t *testing.T) {
 	cfg := GetMockConfig()
 
 	providerMock := new(mocks.URLProvider)
-	providerMock.On("BulkSaveURL", mock.AnythingOfType("*context.valueCtx"), mock.Anything).Return(nil)
+	providerMock.On("BulkSaveURL", mock.AnythingOfType("*context.valueCtx"), mock.Anything, mock.Anything).Return(nil)
 
 	service := New(providerMock, cfg)
 	r := service.GetRouter()
