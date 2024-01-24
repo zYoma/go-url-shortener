@@ -128,3 +128,8 @@ func (s *Storage) GetUserURLs(ctx context.Context, baseURL string, userID string
 	var urls []models.UserURLS
 	return urls, nil
 }
+
+func (s *Storage) DeleteListURL(ctx context.Context, listURL []string, userID string) error {
+	// аналогично
+	return nil
+}

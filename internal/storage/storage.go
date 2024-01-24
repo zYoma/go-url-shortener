@@ -18,4 +18,5 @@ type URLProvider interface {
 	Init() error
 	Ping(ctx context.Context) error
 	GetUserURLs(ctx context.Context, baseURL string, userID string) ([]models.UserURLS, error)
+	DeleteListURL(ctx context.Context, listURL []string, userID string) error
 }

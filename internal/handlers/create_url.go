@@ -104,12 +104,12 @@ func (h *HandlerService) CreateShortURL(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	fmt.Printf("WWWWWWWWWWWWWWWW, %s", userID)
+
 	// сохраняем ссылку в хранилище
 	err = h.provider.SaveURL(ctx, req.URL, shortURL, userID)
 	if err != nil {
 		if errors.Is(err, postgres.ErrConflict) {
-			fmt.Printf("WWWWWWWWWWWWWWWW, %s", userID)
+
 			resultShortURL, _ := h.provider.GetShortURL(ctx, req.URL)
 			w.WriteHeader(http.StatusConflict)
 			response := models.CreateShortURLResponse{

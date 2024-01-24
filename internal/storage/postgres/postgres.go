@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
@@ -26,6 +27,8 @@ var ErrConflict = errors.New("url already exist")
 var ErrGetURL = errors.New("error when select from database")
 var ErrScanRows = errors.New("error when scan rows")
 var ErrSRows = errors.New("line search error")
+var ErrUpdateURL = errors.New("error update urls")
+var ErrURLDeleted = errors.New("URL was deleted")
 
 type Storage struct {
 	pool  *pgxpool.Pool
@@ -71,11 +74,24 @@ func (s *Storage) GetShortURL(ctx context.Context, fullURL string) (string, erro
 }
 
 func (s *Storage) GetURL(ctx context.Context, shortURL string) (string, error) {
-	var fullURL string
-	row := s.pool.QueryRow(ctx, `SELECT full_url FROM url WHERE short_url = $1`, shortURL)
-	err := row.Scan(&fullURL)
+	var (
+		fullURL   string
+		isDeleted bool
+	)
+	row := s.pool.QueryRow(ctx, `SELECT full_url, is_deleted FROM url WHERE short_url = $1`, shortURL)
+	err := row.Scan(&fullURL, &isDeleted)
 	if err != nil {
-		return "", ErrURLNotFound
+		// Если URL не найден, возвращаем соответствующую ошибку
+		if errors.Is(err, sql.ErrNoRows) {
+			return "", ErrURLNotFound
+		}
+		// Для других ошибок возвращаем их напрямую
+		return "", err
+	}
+
+	// Проверяем, помечен ли URL как удаленный
+	if isDeleted {
+		return "", ErrURLDeleted
 	}
 
 	return fullURL, nil
@@ -170,4 +186,37 @@ func (s *Storage) GetUserURLs(ctx context.Context, baseURL string, userID string
 	}
 
 	return urls, nil
+}
+
+func (s *Storage) DeleteListURL(ctx context.Context, listURL []string, userID string) error {
+	if len(listURL) == 0 {
+		// Нет URL для удаления
+		return nil
+	}
+
+	// Создаем строку с плейсхолдерами для каждого URL
+	placeholders := make([]string, len(listURL))
+	for i := range listURL {
+		placeholders[i] = fmt.Sprintf("$%d", i+1) // Создаем плейсхолдеры $1, $2, $3, ...
+	}
+
+	// Составляем SQL-запрос
+	query := fmt.Sprintf(`UPDATE url SET is_deleted = true WHERE short_url IN (%s) AND user_id = $%d`,
+		strings.Join(placeholders, ", "), len(listURL)+1)
+
+	// Подготавливаем список аргументов
+	args := make([]interface{}, len(listURL)+1)
+	for i, url := range listURL {
+		args[i] = url
+	}
+	args[len(listURL)] = userID // Добавляем userID как последний параметр
+
+	// Выполнение запроса
+	_, err := s.pool.Exec(ctx, query, args...)
+	if err != nil {
+		logger.Log.Sugar().Errorf("Не удалось выполнить обновление: %s", err)
+		return ErrUpdateURL
+	}
+
+	return nil
 }

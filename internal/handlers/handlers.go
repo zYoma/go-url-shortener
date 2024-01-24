@@ -31,6 +31,7 @@ func (h *HandlerService) GetRouter() chi.Router {
 		r.Get("/ping", h.Ping)
 		r.Post("/api/shorten/batch", h.CreateShortListURL)
 		r.Get("/api/user/urls", h.GetUserURL)
+		r.Delete("/api/user/urls", h.DeleteShortListURL)
 	})
 
 	return r

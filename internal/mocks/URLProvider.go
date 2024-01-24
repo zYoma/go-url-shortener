@@ -32,6 +32,24 @@ func (_m *URLProvider) BulkSaveURL(ctx context.Context, data []models.InsertData
 	return r0
 }
 
+// DeleteListURL provides a mock function with given fields: ctx, listURL, userID
+func (_m *URLProvider) DeleteListURL(ctx context.Context, listURL []string, userID string) error {
+	ret := _m.Called(ctx, listURL, userID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteListURL")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []string, string) error); ok {
+		r0 = rf(ctx, listURL, userID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
 // GetShortURL provides a mock function with given fields: ctx, shortURL
 func (_m *URLProvider) GetShortURL(ctx context.Context, shortURL string) (string, error) {
 	ret := _m.Called(ctx, shortURL)
