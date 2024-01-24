@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -97,6 +98,7 @@ func (r *responseRecorder) Write(b []byte) (int, error) {
 func cookieSettingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("auth-token")
+		fmt.Printf("COOCKE: %s", cookie)
 
 		if err != nil {
 			// Куки нет, генерируем новый JWT токен
@@ -121,6 +123,7 @@ func cookieSettingMiddleware(next http.Handler) http.Handler {
 		} else {
 			// Кука есть, пытаемся получить пользователя
 			userID := jwt.GetUserId(cookie.Value)
+			fmt.Printf("COOCKE WITH USER: %s", userID)
 			if userID == "" {
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return

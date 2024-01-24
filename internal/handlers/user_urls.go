@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/render"
@@ -13,7 +14,7 @@ func (h *HandlerService) GetUserURL(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	// fmt.Print(userID)
+	fmt.Printf("GET WITH USER: %s", userID)
 	response, err := h.provider.GetUserURLs(ctx, h.cfg.BaseShortURL, userID)
 	if err != nil {
 		http.NotFound(w, req)
