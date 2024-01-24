@@ -22,7 +22,7 @@ func (h *HandlerService) GetUserURL(w http.ResponseWriter, req *http.Request) {
 	}
 
 	if response == nil {
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(http.StatusUnauthorized)
 	}
 	render.JSON(w, req, response)
 }
