@@ -1,10 +1,12 @@
 package handlers
 
 import (
+	"context"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/zYoma/go-url-shortener/internal/auth/jwt"
 	libs "github.com/zYoma/go-url-shortener/internal/libs/gzip"
 	"github.com/zYoma/go-url-shortener/internal/logger"
 	"go.uber.org/zap"
@@ -90,4 +92,43 @@ func (r *responseRecorder) Write(b []byte) (int, error) {
 	size, err := r.ResponseWriter.Write(b)
 	r.size += int64(size)
 	return size, err
+}
+
+func cookieSettingMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		cookie, err := r.Cookie("auth-token")
+
+		if err != nil {
+			// Куки нет, генерируем новый JWT токен
+			tokenString, err := jwt.BuildJWTString()
+			if err != nil {
+				// Обработка ошибки генерации токена
+				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+				return
+			}
+
+			// Устанавливаем куку с JWT токеном
+			http.SetCookie(w, &http.Cookie{
+				Name:  "auth-token",
+				Value: tokenString,
+				Path:  "/",
+			})
+
+			// Передаем идентификатор пользователя в контекст запроса
+			userID := jwt.GetUserId(tokenString)
+			ctx := context.WithValue(r.Context(), "userID", userID)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		} else {
+			// Кука есть, пытаемся получить пользователя
+			userID := jwt.GetUserId(cookie.Value)
+			if userID == "" {
+				http.Error(w, "Unauthorized", http.StatusUnauthorized)
+				return
+			}
+
+			// Передаем идентификатор пользователя в контекст запроса
+			ctx := context.WithValue(r.Context(), "userID", userID)
+			next.ServeHTTP(w, r.WithContext(ctx))
+		}
+	})
 }

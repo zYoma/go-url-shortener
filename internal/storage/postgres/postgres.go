@@ -23,6 +23,9 @@ var ErrURLNotFound = errors.New("url not found")
 var ErrSaveURL = errors.New("error when saving to database")
 var ErrCreateTable = errors.New("error creating tables")
 var ErrConflict = errors.New("url already exist")
+var ErrGetURL = errors.New("error when select from database")
+var ErrScanRows = errors.New("error when scan rows")
+var ErrSRows = errors.New("line search error")
 
 type Storage struct {
 	pool  *pgxpool.Pool
@@ -37,13 +40,13 @@ func New(cfg *config.Config) (storage.StorageProvider, error) {
 	return &Storage{pool: dbpool}, nil
 }
 
-func (s *Storage) SaveURL(ctx context.Context, fullURL string, shortURL string) error {
+func (s *Storage) SaveURL(ctx context.Context, fullURL string, shortURL string, userID string) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
 	_, err := s.pool.Exec(ctx, `
-        INSERT INTO url (full_url, short_url) VALUES ($1, $2) ;
-    `, fullURL, shortURL)
+        INSERT INTO url (full_url, short_url, user_id) VALUES ($1, $2, $3) ;
+    `, fullURL, shortURL, userID)
 
 	if err != nil {
 		var pgErr *pgconn.PgError
@@ -95,7 +98,9 @@ func (s *Storage) Init() error {
 			"id" SERIAL PRIMARY KEY,
 			"full_url" VARCHAR(250) NOT NULL,
 			"short_url" VARCHAR(250) NOT NULL,
-			"created" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+			"created" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+			"user_id" UUID NOT NULL,
+			"is_deleted" BOOLEAN DEFAULT FALSE
 		);
     `)
 
@@ -111,7 +116,7 @@ func (s *Storage) Ping(ctx context.Context) error {
 	return nil
 }
 
-func (s *Storage) BulkSaveURL(ctx context.Context, data []models.InsertData) error {
+func (s *Storage) BulkSaveURL(ctx context.Context, data []models.InsertData, userID string) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -124,12 +129,12 @@ func (s *Storage) BulkSaveURL(ctx context.Context, data []models.InsertData) err
 	valueStrings := make([]string, 0, len(data))
 	valueArgs := make([]interface{}, 0, len(data)*2)
 	for i, d := range data {
-		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d)", i*2+1, i*2+2))
-		valueArgs = append(valueArgs, d.OriginalURL, d.ShortURL)
+		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, $%d)", i*3+1, i*3+2, i*3+3))
+		valueArgs = append(valueArgs, d.OriginalURL, d.ShortURL, userID)
 	}
 
 	// Формирование и выполнение запроса
-	stmt := fmt.Sprintf("INSERT INTO url (full_url, short_url) VALUES %s", strings.Join(valueStrings, ","))
+	stmt := fmt.Sprintf("INSERT INTO url (full_url, short_url, user_id) VALUES %s", strings.Join(valueStrings, ","))
 	_, err := s.pool.Exec(ctx, stmt, valueArgs...)
 	if err != nil {
 		logger.Log.Sugar().Errorf("Не удалось сохранить url: %s", err)
@@ -137,4 +142,32 @@ func (s *Storage) BulkSaveURL(ctx context.Context, data []models.InsertData) err
 	}
 
 	return nil
+}
+
+func (s *Storage) GetUserURLs(ctx context.Context, userID string) ([]models.UserURLS, error) {
+	fmt.Print(userID)
+	var urls []models.UserURLS
+	rows, err := s.pool.Query(ctx, `SELECT short_url, full_url FROM url WHERE user_id = $1`, userID)
+	if err != nil {
+		logger.Log.Sugar().Errorf("Не удалось выполнить запрос: %s", err)
+		return nil, ErrGetURL
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var pair models.UserURLS
+		if err := rows.Scan(&pair.ShortURL, &pair.OriginalURL); err != nil {
+			logger.Log.Sugar().Errorf("Не удалось прочитать строку: %s", err)
+			return nil, ErrScanRows // Возвращаем ошибку, если не удалось прочитать строку
+		}
+		urls = append(urls, pair)
+	}
+
+	// Проверяем наличие ошибок после завершения перебора
+	if err = rows.Err(); err != nil {
+		logger.Log.Sugar().Errorf("Ошибка: %s", err)
+		return nil, ErrSRows
+	}
+
+	return urls, nil
 }

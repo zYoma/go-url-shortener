@@ -55,8 +55,13 @@ func (h *HandlerService) CreateShortListURL(w http.ResponseWriter, r *http.Reque
 	}
 
 	ctx := r.Context()
+	userID, ok := ctx.Value("userID").(string)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
-	err = h.provider.BulkSaveURL(ctx, insertData)
+	err = h.provider.BulkSaveURL(ctx, insertData, userID)
 	if err != nil {
 		render.JSON(w, r, models.Error("failed save link to db"))
 		return

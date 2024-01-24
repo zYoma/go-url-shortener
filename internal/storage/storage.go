@@ -11,10 +11,11 @@ type StorageProvider interface {
 }
 
 type URLProvider interface {
-	SaveURL(ctx context.Context, fullURL string, shortURL string) error
-	BulkSaveURL(ctx context.Context, data []models.InsertData) error
+	SaveURL(ctx context.Context, fullURL string, shortURL string, userID string) error
+	BulkSaveURL(ctx context.Context, data []models.InsertData, userID string) error
 	GetURL(ctx context.Context, shortURL string) (string, error)
 	GetShortURL(ctx context.Context, shortURL string) (string, error)
 	Init() error
 	Ping(ctx context.Context) error
+	GetUserURLs(ctx context.Context, userID string) ([]models.UserURLS, error)
 }

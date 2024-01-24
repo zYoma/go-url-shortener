@@ -65,3 +65,8 @@ type InsertData struct {
 	OriginalURL string
 	ShortURL    string
 }
+
+type UserURLS struct {
+	ShortURL    string `json:"short_url"`
+	OriginalURL string `json:"original_url"`
+}

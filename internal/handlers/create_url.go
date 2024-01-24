@@ -36,9 +36,14 @@ func (h *HandlerService) CreateURL(w http.ResponseWriter, req *http.Request) {
 	shortURL := generator.GenerateShortURL()
 
 	ctx := req.Context()
+	userID, ok := ctx.Value("userID").(string)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	// сохраняем ссылку в хранилище
-	err = h.provider.SaveURL(ctx, originalURL, shortURL)
+	err = h.provider.SaveURL(ctx, originalURL, shortURL, userID)
 	if err != nil {
 		if errors.Is(err, postgres.ErrConflict) {
 			resultShortURL, _ := h.provider.GetShortURL(ctx, originalURL)
@@ -95,9 +100,14 @@ func (h *HandlerService) CreateShortURL(w http.ResponseWriter, r *http.Request) 
 	shortURL := generator.GenerateShortURL()
 
 	ctx := r.Context()
+	userID, ok := ctx.Value("userID").(string)
+	if !ok {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
 
 	// сохраняем ссылку в хранилище
-	err = h.provider.SaveURL(ctx, req.URL, shortURL)
+	err = h.provider.SaveURL(ctx, req.URL, shortURL, userID)
 	if err != nil {
 		if errors.Is(err, postgres.ErrConflict) {
 			resultShortURL, _ := h.provider.GetShortURL(ctx, req.URL)

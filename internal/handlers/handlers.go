@@ -21,6 +21,7 @@ func (h *HandlerService) GetRouter() chi.Router {
 
 	r.Use(handlerLogger)
 	r.Use(gzipMiddleware)
+	r.Use(cookieSettingMiddleware)
 
 	// добавляем маршруты
 	r.Route("/", func(r chi.Router) {
@@ -29,6 +30,7 @@ func (h *HandlerService) GetRouter() chi.Router {
 		r.Get("/{id}", h.GetURL)
 		r.Get("/ping", h.Ping)
 		r.Post("/api/shorten/batch", h.CreateShortListURL)
+		r.Get("/api/user/urls", h.GetUserURL)
 	})
 
 	return r
