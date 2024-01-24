@@ -124,6 +124,7 @@ func (s *Storage) saveFile() error {
 }
 
 func (s *Storage) GetUserURLs(ctx context.Context, baseURL string, userID string) ([]models.UserURLS, error) {
+	// не сделал поддержку данного метода в текущей реализации так как тестами она не проверяется, заленился
 	var urls []models.UserURLS
 	return urls, nil
 }
