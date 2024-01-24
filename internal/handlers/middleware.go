@@ -98,7 +98,6 @@ func (r *responseRecorder) Write(b []byte) (int, error) {
 func cookieSettingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("auth-token")
-		fmt.Printf("COOCKE: %s", cookie)
 
 		if err != nil {
 			// Куки нет, генерируем новый JWT токен
@@ -118,6 +117,7 @@ func cookieSettingMiddleware(next http.Handler) http.Handler {
 
 			// Передаем идентификатор пользователя в контекст запроса
 			userID := jwt.GetUserId(tokenString)
+			fmt.Printf("COOCKE WITH USER: %s", userID)
 			ctx := context.WithValue(r.Context(), "userID", userID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		} else {
