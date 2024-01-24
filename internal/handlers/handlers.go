@@ -21,7 +21,7 @@ func (h *HandlerService) GetRouter() chi.Router {
 
 	r.Use(handlerLogger)
 	r.Use(gzipMiddleware)
-	r.Use(cookieSettingMiddleware)
+	r.Use(h.cookieSettingMiddleware)
 
 	// добавляем маршруты
 	r.Route("/", func(r chi.Router) {

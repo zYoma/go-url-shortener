@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"strings"
 	"time"
@@ -11,6 +10,12 @@ import (
 	libs "github.com/zYoma/go-url-shortener/internal/libs/gzip"
 	"github.com/zYoma/go-url-shortener/internal/logger"
 	"go.uber.org/zap"
+)
+
+type contextKey string
+
+const (
+	userIDKey contextKey = "userID"
 )
 
 func gzipMiddleware(next http.Handler) http.Handler {
@@ -95,13 +100,14 @@ func (r *responseRecorder) Write(b []byte) (int, error) {
 	return size, err
 }
 
-func cookieSettingMiddleware(next http.Handler) http.Handler {
+func (h *HandlerService) cookieSettingMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		cookie, err := r.Cookie("auth-token")
+		secret := h.cfg.TokenSecret
 
 		if err != nil {
 			// Куки нет, генерируем новый JWT токен
-			tokenString, err := jwt.BuildJWTString()
+			tokenString, err := jwt.BuildJWTString(secret)
 			if err != nil {
 				// Обработка ошибки генерации токена
 				http.Error(w, "Internal Server Error", http.StatusInternalServerError)
@@ -116,21 +122,19 @@ func cookieSettingMiddleware(next http.Handler) http.Handler {
 			})
 
 			// Передаем идентификатор пользователя в контекст запроса
-			userID := jwt.GetUserId(tokenString)
-			fmt.Printf("COOCKE WITH USER: %s", userID)
-			ctx := context.WithValue(r.Context(), "userID", userID)
+			userID := jwt.GetUserID(tokenString, secret)
+			ctx := context.WithValue(r.Context(), userIDKey, userID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		} else {
 			// Кука есть, пытаемся получить пользователя
-			userID := jwt.GetUserId(cookie.Value)
-			fmt.Printf("COOCKE WITH USER: %s", userID)
+			userID := jwt.GetUserID(cookie.Value, secret)
 			if userID == "" {
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return
 			}
 
 			// Передаем идентификатор пользователя в контекст запроса
-			ctx := context.WithValue(r.Context(), "userID", userID)
+			ctx := context.WithValue(r.Context(), userIDKey, userID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		}
 	})

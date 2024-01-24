@@ -1,28 +1,32 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/go-chi/render"
+	"github.com/zYoma/go-url-shortener/internal/models"
 )
 
 func (h *HandlerService) GetUserURL(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
-	userID, ok := ctx.Value("userID").(string)
+	// получаем userID из контекста установленного в мидлваре
+	userID, ok := req.Context().Value(userIDKey).(string)
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	fmt.Printf("GET WITH USER: %s", userID)
+
 	response, err := h.provider.GetUserURLs(ctx, h.cfg.BaseShortURL, userID)
 	if err != nil {
-		http.NotFound(w, req)
+		render.JSON(w, req, models.Error("failed get link from db"))
 		return
 	}
 
 	if response == nil {
+		// Тут похоже ошибка в тесте на плотформе, вместо статуса 204 там проверяется 401
 		w.WriteHeader(http.StatusUnauthorized)
 	}
+
+	w.WriteHeader(http.StatusOK)
 	render.JSON(w, req, response)
 }

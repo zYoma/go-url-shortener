@@ -100,7 +100,7 @@ func (h *HandlerService) CreateShortURL(w http.ResponseWriter, r *http.Request) 
 	shortURL := generator.GenerateShortURL()
 
 	ctx := r.Context()
-	userID, ok := ctx.Value("userID").(string)
+	userID, ok := r.Context().Value(userIDKey).(string)
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
