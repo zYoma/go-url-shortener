@@ -15,7 +15,7 @@ type Claims struct {
 	UserID string
 }
 
-const TOKEN_EXP = time.Hour * 3
+const TokenExp = time.Hour * 3
 
 var ErrCreateUUID = errors.New("error create uuid")
 var ErrCreateToken = errors.New("error create token")
@@ -40,7 +40,7 @@ func BuildJWTString(secret string) (string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, Claims{
 		RegisteredClaims: jwt.RegisteredClaims{
 			// когда создан токен
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(TOKEN_EXP)),
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(TokenExp)),
 		},
 		// собственное утверждение
 		UserID: uuid,

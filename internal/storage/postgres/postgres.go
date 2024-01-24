@@ -157,7 +157,7 @@ func (s *Storage) GetUserURLs(ctx context.Context, baseURL string, userID string
 		var pair models.UserURLS
 		if err := rows.Scan(&pair.ShortURL, &pair.OriginalURL); err != nil {
 			logger.Log.Sugar().Errorf("Не удалось прочитать строку: %s", err)
-			return nil, ErrScanRows // Возвращаем ошибку, если не удалось прочитать строку
+			return nil, ErrScanRows
 		}
 		pair.ShortURL = fmt.Sprintf("%s/%s", baseURL, pair.ShortURL)
 		urls = append(urls, pair)

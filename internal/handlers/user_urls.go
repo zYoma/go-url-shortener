@@ -22,11 +22,10 @@ func (h *HandlerService) GetUserURL(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	if response == nil {
+	if len(response) == 0 {
 		// Тут похоже ошибка в тесте на плотформе, вместо статуса 204 там проверяется 401
-		w.WriteHeader(http.StatusUnauthorized)
+		w.WriteHeader(http.StatusNoContent)
 	}
 
-	w.WriteHeader(http.StatusOK)
 	render.JSON(w, req, response)
 }
