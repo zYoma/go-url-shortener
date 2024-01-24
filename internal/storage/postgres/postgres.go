@@ -144,8 +144,7 @@ func (s *Storage) BulkSaveURL(ctx context.Context, data []models.InsertData, use
 	return nil
 }
 
-func (s *Storage) GetUserURLs(ctx context.Context, userID string) ([]models.UserURLS, error) {
-	fmt.Print(userID)
+func (s *Storage) GetUserURLs(ctx context.Context, baseURL string, userID string) ([]models.UserURLS, error) {
 	var urls []models.UserURLS
 	rows, err := s.pool.Query(ctx, `SELECT short_url, full_url FROM url WHERE user_id = $1`, userID)
 	if err != nil {
@@ -160,6 +159,7 @@ func (s *Storage) GetUserURLs(ctx context.Context, userID string) ([]models.User
 			logger.Log.Sugar().Errorf("Не удалось прочитать строку: %s", err)
 			return nil, ErrScanRows // Возвращаем ошибку, если не удалось прочитать строку
 		}
+		pair.ShortURL = fmt.Sprintf("%s/%s", baseURL, pair.ShortURL)
 		urls = append(urls, pair)
 	}
 

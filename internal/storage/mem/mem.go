@@ -123,7 +123,7 @@ func (s *Storage) saveFile() error {
 	return nil
 }
 
-func (s *Storage) GetUserURLs(ctx context.Context, userID string) ([]models.UserURLS, error) {
+func (s *Storage) GetUserURLs(ctx context.Context, baseURL string, userID string) ([]models.UserURLS, error) {
 	var urls []models.UserURLS
 	return urls, nil
 }

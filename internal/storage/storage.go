@@ -17,5 +17,5 @@ type URLProvider interface {
 	GetShortURL(ctx context.Context, shortURL string) (string, error)
 	Init() error
 	Ping(ctx context.Context) error
-	GetUserURLs(ctx context.Context, userID string) ([]models.UserURLS, error)
+	GetUserURLs(ctx context.Context, baseURL string, userID string) ([]models.UserURLS, error)
 }
