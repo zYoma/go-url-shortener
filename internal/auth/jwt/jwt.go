@@ -14,7 +14,7 @@ type Claims struct {
 }
 
 const TOKEN_EXP = time.Hour * 3
-const SECRET_KEY = "supersecretkey"
+const SECRET_KEY = "735474574573457"
 
 func generateUUID() string {
 	newUUID, err := uuid.NewRandom()
