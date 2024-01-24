@@ -15,7 +15,7 @@ import (
 type contextKey string
 
 const (
-	userIDKey contextKey = "userID"
+	UserIDKey contextKey = "userID"
 )
 
 func gzipMiddleware(next http.Handler) http.Handler {
@@ -123,7 +123,7 @@ func (h *HandlerService) cookieSettingMiddleware(next http.Handler) http.Handler
 
 			// Передаем идентификатор пользователя в контекст запроса
 			userID := jwt.GetUserID(tokenString, secret)
-			ctx := context.WithValue(r.Context(), userIDKey, userID)
+			ctx := context.WithValue(r.Context(), UserIDKey, userID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		} else {
 			// Кука есть, пытаемся получить пользователя
@@ -132,9 +132,8 @@ func (h *HandlerService) cookieSettingMiddleware(next http.Handler) http.Handler
 				http.Error(w, "Unauthorized", http.StatusUnauthorized)
 				return
 			}
-
 			// Передаем идентификатор пользователя в контекст запроса
-			ctx := context.WithValue(r.Context(), userIDKey, userID)
+			ctx := context.WithValue(r.Context(), UserIDKey, userID)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		}
 	})

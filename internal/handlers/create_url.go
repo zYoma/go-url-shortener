@@ -36,7 +36,7 @@ func (h *HandlerService) CreateURL(w http.ResponseWriter, req *http.Request) {
 	shortURL := generator.GenerateShortURL()
 
 	ctx := req.Context()
-	userID, ok := ctx.Value("userID").(string)
+	userID, ok := req.Context().Value(UserIDKey).(string)
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
@@ -63,7 +63,6 @@ func (h *HandlerService) CreateURL(w http.ResponseWriter, req *http.Request) {
 }
 
 func (h *HandlerService) CreateShortURL(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("Произошла ошибка")
 	var req models.CreateShortURLRequest
 
 	w.Header().Set("Content-Type", "application/json")
@@ -100,7 +99,7 @@ func (h *HandlerService) CreateShortURL(w http.ResponseWriter, r *http.Request) 
 	shortURL := generator.GenerateShortURL()
 
 	ctx := r.Context()
-	userID, ok := r.Context().Value(userIDKey).(string)
+	userID, ok := r.Context().Value(UserIDKey).(string)
 	if !ok {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
