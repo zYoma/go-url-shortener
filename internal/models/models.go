@@ -70,3 +70,8 @@ type UserURLS struct {
 	ShortURL    string `json:"short_url"`
 	OriginalURL string `json:"original_url"`
 }
+
+type UserListURLForDelete struct {
+	UserID string
+	URLS   []string
+}

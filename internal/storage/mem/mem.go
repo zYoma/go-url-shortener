@@ -129,7 +129,7 @@ func (s *Storage) GetUserURLs(ctx context.Context, baseURL string, userID string
 	return urls, nil
 }
 
-func (s *Storage) DeleteListURL(ctx context.Context, listURL []string, userID string) error {
+func (s *Storage) DeleteListURL(ctx context.Context, messages []models.UserListURLForDelete) error {
 	// аналогично
 	return nil
 }

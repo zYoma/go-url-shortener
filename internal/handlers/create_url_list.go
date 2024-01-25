@@ -55,8 +55,8 @@ func (h *HandlerService) CreateShortListURL(w http.ResponseWriter, r *http.Reque
 	}
 
 	ctx := r.Context()
-	userID, ok := r.Context().Value(UserIDKey).(string)
-	if !ok {
+	userID, err := getUserFromRequest(r.Context())
+	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}

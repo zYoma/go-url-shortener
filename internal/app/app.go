@@ -1,6 +1,13 @@
 package app
 
 import (
+	"context"
+	"errors"
+	"net/http"
+	"os"
+	"os/signal"
+	"syscall"
+
 	"github.com/zYoma/go-url-shortener/internal/app/server"
 	"github.com/zYoma/go-url-shortener/internal/config"
 	"github.com/zYoma/go-url-shortener/internal/logger"
@@ -12,6 +19,8 @@ import (
 type App struct {
 	Server *server.HTTPServer
 }
+
+var ErrServerStoped = errors.New("server stoped")
 
 func New(cfg *config.Config) (*App, error) {
 	// создаем провайдер для storage
@@ -32,22 +41,35 @@ func New(cfg *config.Config) (*App, error) {
 }
 
 func (s *App) Run() error {
+	// Контекст с отменой для остановки сервера
+	ctx, stop := context.WithCancel(context.Background())
+	defer stop()
+
 	// Создание канала для ошибок
 	errChan := make(chan error)
 
 	// запустить сервис
 	logger.Log.Info("start application")
-
 	go func() {
-		errChan <- s.Server.Run()
+		if err := s.Server.Run(); err != nil && err != http.ErrServerClosed {
+			errChan <- err
+		}
 	}()
 
-	// Ожидание и обработка ошибки из горутины
-	if err := <-errChan; err != nil {
+	// Ожидание сигнала завершения работы
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+
+	select {
+	case <-sigChan:
+		// При получении сигнала завершения останавливаем сервер
+		if err := s.Server.Shutdown(ctx); err != nil {
+			return err
+		}
+		return ErrServerStoped
+	case err := <-errChan:
 		return err
 	}
-
-	return nil
 
 }
 

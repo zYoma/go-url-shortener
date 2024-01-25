@@ -1,11 +1,9 @@
 package handlers
 
 import (
-	"context"
 	"errors"
 	"io"
 	"net/http"
-	"time"
 
 	"github.com/go-chi/render"
 	"github.com/zYoma/go-url-shortener/internal/logger"
@@ -14,10 +12,15 @@ import (
 )
 
 func (h *HandlerService) DeleteShortListURL(w http.ResponseWriter, req *http.Request) {
-	userID, _ := req.Context().Value(UserIDKey).(string)
+	userID, err := getUserFromRequest(req.Context())
+	if err != nil {
+		http.Error(w, "Unauthorized", http.StatusUnauthorized)
+		return
+	}
+
 	var listURL []string
 
-	err := render.DecodeJSON(req.Body, &listURL)
+	err = render.DecodeJSON(req.Body, &listURL)
 
 	if errors.Is(err, io.EOF) {
 		logger.Log.Error("request body is empty")
@@ -31,17 +34,6 @@ func (h *HandlerService) DeleteShortListURL(w http.ResponseWriter, req *http.Req
 		render.JSON(w, req, models.Error("failed to decode request"))
 		return
 	}
-
-	go func() {
-		// Создаем новый контекст с тайм-аутом
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-
-		// Выполняем операцию с новым контекстом
-		if err := h.provider.DeleteListURL(ctx, listURL, userID); err != nil {
-			logger.Log.Error("Error deleting URLs", zap.Error(err))
-			return
-		}
-	}()
+	h.delChan <- models.UserListURLForDelete{UserID: userID, URLS: listURL}
 	w.WriteHeader(http.StatusAccepted)
 }

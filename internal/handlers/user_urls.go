@@ -10,8 +10,8 @@ import (
 func (h *HandlerService) GetUserURL(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 	// получаем userID из контекста установленного в мидлваре
-	userID, ok := req.Context().Value(UserIDKey).(string)
-	if !ok {
+	userID, err := getUserFromRequest(req.Context())
+	if err != nil {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}

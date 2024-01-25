@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -17,6 +18,8 @@ type contextKey string
 const (
 	UserIDKey contextKey = "userID"
 )
+
+var ErrGetUserFromRequest = errors.New("faild get user")
 
 func gzipMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -125,16 +128,25 @@ func (h *HandlerService) cookieSettingMiddleware(next http.Handler) http.Handler
 			userID := jwt.GetUserID(tokenString, secret)
 			ctx := context.WithValue(r.Context(), UserIDKey, userID)
 			next.ServeHTTP(w, r.WithContext(ctx))
-		} else {
-			// Кука есть, пытаемся получить пользователя
-			userID := jwt.GetUserID(cookie.Value, secret)
-			if userID == "" {
-				http.Error(w, "Unauthorized", http.StatusUnauthorized)
-				return
-			}
-			// Передаем идентификатор пользователя в контекст запроса
-			ctx := context.WithValue(r.Context(), UserIDKey, userID)
-			next.ServeHTTP(w, r.WithContext(ctx))
+			return
 		}
+		// Кука есть, пытаемся получить пользователя
+		userID := jwt.GetUserID(cookie.Value, secret)
+		if userID == "" {
+			http.Error(w, "Unauthorized", http.StatusUnauthorized)
+			return
+		}
+		// Передаем идентификатор пользователя в контекст запроса
+		ctx := context.WithValue(r.Context(), UserIDKey, userID)
+		next.ServeHTTP(w, r.WithContext(ctx))
+
 	})
+}
+
+func getUserFromRequest(ctx context.Context) (string, error) {
+	userID, ok := ctx.Value(UserIDKey).(string)
+	if !ok {
+		return "", ErrGetUserFromRequest
+	}
+	return userID, nil
 }

@@ -19,15 +19,15 @@ import (
 )
 
 var ErrCreatePool = errors.New("unable to create connection pool")
-var ErrPing = errors.New("error when checking connection to the database")
+var ErrPing = errors.New("checking connection to the database")
 var ErrURLNotFound = errors.New("url not found")
-var ErrSaveURL = errors.New("error when saving to database")
-var ErrCreateTable = errors.New("error creating tables")
+var ErrSaveURL = errors.New("saving to database")
+var ErrCreateTable = errors.New("creating tables")
 var ErrConflict = errors.New("url already exist")
-var ErrGetURL = errors.New("error when select from database")
-var ErrScanRows = errors.New("error when scan rows")
+var ErrGetURL = errors.New("select from database")
+var ErrScanRows = errors.New("scan rows")
 var ErrSRows = errors.New("line search error")
-var ErrUpdateURL = errors.New("error update urls")
+var ErrUpdateURL = errors.New("update urls")
 var ErrURLDeleted = errors.New("URL was deleted")
 
 type Storage struct {
@@ -188,30 +188,33 @@ func (s *Storage) GetUserURLs(ctx context.Context, baseURL string, userID string
 	return urls, nil
 }
 
-func (s *Storage) DeleteListURL(ctx context.Context, listURL []string, userID string) error {
-	if len(listURL) == 0 {
-		// Нет URL для удаления
+func (s *Storage) DeleteListURL(ctx context.Context, messages []models.UserListURLForDelete) error {
+	if len(messages) == 0 {
+		// Нет данных для обработки
 		return nil
 	}
 
-	// Создаем строку с плейсхолдерами для каждого URL
-	placeholders := make([]string, len(listURL))
-	for i := range listURL {
-		placeholders[i] = fmt.Sprintf("$%d", i+1) // Создаем плейсхолдеры $1, $2, $3, ...
+	var (
+		placeholders []string
+		args         []interface{}
+		argCounter   int = 1
+	)
+
+	for _, message := range messages {
+		for _, url := range message.URLS {
+			placeholders = append(placeholders, fmt.Sprintf("($%d, $%d)", argCounter, argCounter+1))
+			args = append(args, url, message.UserID)
+			argCounter += 2
+		}
 	}
 
-	// Составляем SQL-запрос
-	query := fmt.Sprintf(`UPDATE url SET is_deleted = true WHERE short_url IN (%s) AND user_id = $%d`,
-		strings.Join(placeholders, ", "), len(listURL)+1)
-
-	// Подготавливаем список аргументов
-	args := make([]interface{}, len(listURL)+1)
-	for i, url := range listURL {
-		args[i] = url
+	if len(placeholders) == 0 {
+		return nil // Нет URL для обновления
 	}
-	args[len(listURL)] = userID // Добавляем userID как последний параметр
 
-	// Выполнение запроса
+	query := fmt.Sprintf(`UPDATE url SET is_deleted = true WHERE (short_url, user_id) IN (%s)`,
+		strings.Join(placeholders, ", "))
+
 	_, err := s.pool.Exec(ctx, query, args...)
 	if err != nil {
 		logger.Log.Sugar().Errorf("Не удалось выполнить обновление: %s", err)

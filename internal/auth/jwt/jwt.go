@@ -17,8 +17,8 @@ type Claims struct {
 
 const TokenExp = time.Hour * 3
 
-var ErrCreateUUID = errors.New("error create uuid")
-var ErrCreateToken = errors.New("error create token")
+var ErrCreateUUID = errors.New("create uuid")
+var ErrCreateToken = errors.New("create token")
 
 func generateUUID() (string, error) {
 	newUUID, err := uuid.NewRandom()
