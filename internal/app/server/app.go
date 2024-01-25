@@ -48,6 +48,6 @@ func (a *HTTPServer) Run() error {
 
 func (a *HTTPServer) Shutdown(ctx context.Context) error {
 	// ждем пока фоновые таски завершатся
-	time.Sleep(5 * time.Second)
+	time.Sleep(3 * time.Second)
 	return a.server.Shutdown(ctx)
 }

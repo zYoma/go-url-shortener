@@ -197,7 +197,7 @@ func (s *Storage) DeleteListURL(ctx context.Context, messages []models.UserListU
 	var (
 		placeholders []string
 		args         []interface{}
-		argCounter   int = 1
+		argCounter   = 1
 	)
 
 	for _, message := range messages {

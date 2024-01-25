@@ -50,7 +50,7 @@ func (h *HandlerService) GetRouter() chi.Router {
 // deleteMessages постоянно удаляет несколько сообщений из хранилища с определённым интервалом
 func (h *HandlerService) DeleteMessages() {
 	// будем сохранять сообщения, накопленные за последние 10 секунд
-	ticker := time.NewTicker(100 * time.Second)
+	ticker := time.NewTicker(10 * time.Second)
 
 	var messages []models.UserListURLForDelete
 
