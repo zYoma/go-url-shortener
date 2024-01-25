@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -48,7 +49,7 @@ func (h *HandlerService) GetRouter() chi.Router {
 }
 
 // deleteMessages постоянно удаляет несколько сообщений из хранилища с определённым интервалом
-func (h *HandlerService) DeleteMessages() {
+func (h *HandlerService) DeleteMessages(wg *sync.WaitGroup) {
 	// будем сохранять сообщения, накопленные за последние 10 секунд
 	ticker := time.NewTicker(10 * time.Second)
 
@@ -69,6 +70,7 @@ func (h *HandlerService) DeleteMessages() {
 		case <-sigChan:
 			// сигнал остановки приложение
 			h.saveMessages(&messages)
+			wg.Done()
 			return
 		}
 	}

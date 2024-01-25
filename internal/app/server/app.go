@@ -3,7 +3,7 @@ package server
 import (
 	"context"
 	"net/http"
-	"time"
+	"sync"
 
 	"github.com/zYoma/go-url-shortener/internal/config"
 	"github.com/zYoma/go-url-shortener/internal/handlers"
@@ -12,6 +12,7 @@ import (
 
 type HTTPServer struct {
 	server *http.Server
+	wg     *sync.WaitGroup
 }
 
 func New(
@@ -23,7 +24,9 @@ func New(
 	service := handlers.New(provider, cfg)
 
 	// запускаем горутину для удаления сообщений
-	go service.DeleteMessages()
+	var wg sync.WaitGroup
+	wg.Add(1) // если нужно будет запустить несколько горутин, инкриментировать в цикле
+	go service.DeleteMessages(&wg)
 
 	// получаем роутер
 	router := service.GetRouter()
@@ -34,6 +37,7 @@ func New(
 	}
 	return &HTTPServer{
 		server: server,
+		wg:     &wg,
 	}
 }
 
@@ -47,7 +51,7 @@ func (a *HTTPServer) Run() error {
 }
 
 func (a *HTTPServer) Shutdown(ctx context.Context) error {
-	// ждем пока фоновые таски завершатся
-	time.Sleep(3 * time.Second)
+	// ждем пока все горутины завершатся
+	a.wg.Wait()
 	return a.server.Shutdown(ctx)
 }
