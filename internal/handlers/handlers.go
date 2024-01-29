@@ -50,6 +50,8 @@ func (h *HandlerService) GetRouter() chi.Router {
 
 // deleteMessages постоянно удаляет несколько сообщений из хранилища с определённым интервалом
 func (h *HandlerService) DeleteMessages(wg *sync.WaitGroup) {
+	defer wg.Done()
+
 	// будем сохранять сообщения, накопленные за последние 10 секунд
 	ticker := time.NewTicker(10 * time.Second)
 
@@ -64,13 +66,16 @@ func (h *HandlerService) DeleteMessages(wg *sync.WaitGroup) {
 		case msg := <-h.delChan:
 			// пришло новое сообщение, добавляем в список на удаление
 			messages = append(messages, msg)
+			if len(messages) >= 100 {
+				// Если в списке накопилось 100 сообщений, запускаем удаление
+				h.saveMessages(&messages)
+			}
 		case <-ticker.C:
 			// сработал таймер, запускаем удаление
 			h.saveMessages(&messages)
 		case <-sigChan:
 			// сигнал остановки приложение
 			h.saveMessages(&messages)
-			wg.Done()
 			return
 		}
 	}

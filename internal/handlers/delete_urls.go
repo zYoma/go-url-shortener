@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/render"
 	"github.com/zYoma/go-url-shortener/internal/logger"
@@ -34,6 +35,16 @@ func (h *HandlerService) DeleteShortListURL(w http.ResponseWriter, req *http.Req
 		render.JSON(w, req, models.Error("failed to decode request"))
 		return
 	}
-	h.delChan <- models.UserListURLForDelete{UserID: userID, URLS: listURL}
+
+	go func() {
+		select {
+		case h.delChan <- models.UserListURLForDelete{UserID: userID, URLS: listURL}:
+			// Успешно отправлено
+		case <-time.After(time.Second * 5): // Например, 5 секунд таймаут
+			// Обработка таймаута, возможно запись в лог
+			logger.Log.Error("timeout when sending to delChan")
+		}
+	}()
+
 	w.WriteHeader(http.StatusAccepted)
 }
