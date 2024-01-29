@@ -14,17 +14,35 @@ type URLProvider struct {
 	mock.Mock
 }
 
-// BulkSaveURL provides a mock function with given fields: ctx, data
-func (_m *URLProvider) BulkSaveURL(ctx context.Context, data []models.InsertData) error {
-	ret := _m.Called(ctx, data)
+// BulkSaveURL provides a mock function with given fields: ctx, data, userID
+func (_m *URLProvider) BulkSaveURL(ctx context.Context, data []models.InsertData, userID string) error {
+	ret := _m.Called(ctx, data, userID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for BulkSaveURL")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, []models.InsertData) error); ok {
-		r0 = rf(ctx, data)
+	if rf, ok := ret.Get(0).(func(context.Context, []models.InsertData, string) error); ok {
+		r0 = rf(ctx, data, userID)
+	} else {
+		r0 = ret.Error(0)
+	}
+
+	return r0
+}
+
+// DeleteListURL provides a mock function with given fields: ctx, messages
+func (_m *URLProvider) DeleteListURL(ctx context.Context, messages []models.UserListURLForDelete) error {
+	ret := _m.Called(ctx, messages)
+
+	if len(ret) == 0 {
+		panic("no return value specified for DeleteListURL")
+	}
+
+	var r0 error
+	if rf, ok := ret.Get(0).(func(context.Context, []models.UserListURLForDelete) error); ok {
+		r0 = rf(ctx, messages)
 	} else {
 		r0 = ret.Error(0)
 	}
@@ -88,6 +106,36 @@ func (_m *URLProvider) GetURL(ctx context.Context, shortURL string) (string, err
 	return r0, r1
 }
 
+// GetUserURLs provides a mock function with given fields: ctx, baseURL, userID
+func (_m *URLProvider) GetUserURLs(ctx context.Context, baseURL string, userID string) ([]models.UserURLS, error) {
+	ret := _m.Called(ctx, baseURL, userID)
+
+	if len(ret) == 0 {
+		panic("no return value specified for GetUserURLs")
+	}
+
+	var r0 []models.UserURLS
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) ([]models.UserURLS, error)); ok {
+		return rf(ctx, baseURL, userID)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string, string) []models.UserURLS); ok {
+		r0 = rf(ctx, baseURL, userID)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).([]models.UserURLS)
+		}
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string, string) error); ok {
+		r1 = rf(ctx, baseURL, userID)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
 // Init provides a mock function with given fields:
 func (_m *URLProvider) Init() error {
 	ret := _m.Called()
@@ -124,17 +172,17 @@ func (_m *URLProvider) Ping(ctx context.Context) error {
 	return r0
 }
 
-// SaveURL provides a mock function with given fields: ctx, fullURL, shortURL
-func (_m *URLProvider) SaveURL(ctx context.Context, fullURL string, shortURL string) error {
-	ret := _m.Called(ctx, fullURL, shortURL)
+// SaveURL provides a mock function with given fields: ctx, fullURL, shortURL, userID
+func (_m *URLProvider) SaveURL(ctx context.Context, fullURL string, shortURL string, userID string) error {
+	ret := _m.Called(ctx, fullURL, shortURL, userID)
 
 	if len(ret) == 0 {
 		panic("no return value specified for SaveURL")
 	}
 
 	var r0 error
-	if rf, ok := ret.Get(0).(func(context.Context, string, string) error); ok {
-		r0 = rf(ctx, fullURL, shortURL)
+	if rf, ok := ret.Get(0).(func(context.Context, string, string, string) error); ok {
+		r0 = rf(ctx, fullURL, shortURL, userID)
 	} else {
 		r0 = ret.Error(0)
 	}

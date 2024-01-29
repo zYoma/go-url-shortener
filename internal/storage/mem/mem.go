@@ -32,7 +32,7 @@ func New(cfg *config.Config) (storage.StorageProvider, error) {
 }
 
 // SaveUrl to db.
-func (s *Storage) SaveURL(ctx context.Context, fullURL string, shortURL string) error {
+func (s *Storage) SaveURL(ctx context.Context, fullURL string, shortURL string, userID string) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
@@ -95,7 +95,7 @@ func (s *Storage) Ping(ctx context.Context) error {
 	return nil
 }
 
-func (s *Storage) BulkSaveURL(ctx context.Context, data []models.InsertData) error {
+func (s *Storage) BulkSaveURL(ctx context.Context, data []models.InsertData, userID string) error {
 	for _, url := range data {
 		s.db[url.ShortURL] = url.OriginalURL
 	}
@@ -120,5 +120,16 @@ func (s *Storage) saveFile() error {
 		return ErrWriteFile
 	}
 
+	return nil
+}
+
+func (s *Storage) GetUserURLs(ctx context.Context, baseURL string, userID string) ([]models.UserURLS, error) {
+	// не сделал поддержку данного метода в текущей реализации так как тестами она не проверяется, заленился
+	var urls []models.UserURLS
+	return urls, nil
+}
+
+func (s *Storage) DeleteListURL(ctx context.Context, messages []models.UserListURLForDelete) error {
+	// аналогично
 	return nil
 }

@@ -1,9 +1,7 @@
 package main
 
 import (
-	"os"
-	"os/signal"
-	"syscall"
+	"errors"
 
 	"github.com/zYoma/go-url-shortener/internal/app"
 	"github.com/zYoma/go-url-shortener/internal/config"
@@ -27,14 +25,11 @@ func main() {
 
 	// запускаем приложение
 	if err := application.Run(); err != nil {
+		if errors.Is(err, app.ErrServerStoped) {
+			logger.Log.Sugar().Infoln("stopping application")
+			return
+		}
+
 		panic(err)
 	}
-
-	// будем ждать сигнала остановки приложения
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
-
-	//горутины выполняются пока в канал не прилетит один из ожидаемых сигналов
-	sign := <-stop
-	logger.Log.Sugar().Infoln("stopping application", sign)
 }

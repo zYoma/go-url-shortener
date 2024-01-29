@@ -10,6 +10,7 @@ var flagBaseShortURL string
 var flagLogLevel string
 var flagStorageFileNmae string
 var flagDSN string
+var flagTokenSecret string
 
 const (
 	envServerAddress = "SERVER_ADDRESS"
@@ -17,6 +18,7 @@ const (
 	envLoggerLevel   = "LOG_LEVEL"
 	envStorageFile   = "FILE_STORAGE_PATH"
 	envDSN           = "DATABASE_DSN"
+	envTokenSecret   = "TOKEN_SECRET"
 )
 
 type Config struct {
@@ -25,6 +27,7 @@ type Config struct {
 	LogLevel     string
 	StorageFile  string
 	DSN          string
+	TokenSecret  string
 }
 
 func GetConfig() *Config {
@@ -34,6 +37,7 @@ func GetConfig() *Config {
 	flag.StringVar(&flagLogLevel, "l", "info", "log level")
 	flag.StringVar(&flagStorageFileNmae, "f", "/tmp/short-url-db.json", "starage file name")
 	flag.StringVar(&flagDSN, "d", "", "DB DSN")
+	flag.StringVar(&flagTokenSecret, "s", "secret_for_test_only", "secret for jwt")
 	flag.Parse()
 
 	// если есть переменные окружения, используем их значения
@@ -52,6 +56,9 @@ func GetConfig() *Config {
 	if envDBDSN := os.Getenv(envDSN); envDBDSN != "" {
 		flagDSN = envDBDSN
 	}
+	if envJWTSecret := os.Getenv(envTokenSecret); envJWTSecret != "" {
+		flagTokenSecret = envJWTSecret
+	}
 
 	return &Config{
 		RunAddr:      flagRunAddr,
@@ -59,5 +66,6 @@ func GetConfig() *Config {
 		LogLevel:     flagLogLevel,
 		StorageFile:  flagStorageFileNmae,
 		DSN:          flagDSN,
+		TokenSecret:  flagTokenSecret,
 	}
 }
