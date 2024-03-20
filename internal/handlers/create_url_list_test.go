@@ -1,6 +1,9 @@
 package handlers
 
 import (
+	"bytes"
+	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -11,6 +14,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/zYoma/go-url-shortener/internal/mocks"
+	"github.com/zYoma/go-url-shortener/internal/models"
 )
 
 var successBody string = `
@@ -88,5 +92,35 @@ func TestCreateListURL(t *testing.T) {
 			assert.Contains(t, string(resp.Body()), tc.expectedBody)
 
 		})
+	}
+}
+
+func BenchmarkCreateShortListURL(b *testing.B) {
+	// Инициализация логгера, конфигурации, моковых сервисов и т.д.
+	cfg := GetMockConfig()
+
+	providerMock := new(mocks.URLProvider)
+	providerMock.On("BulkSaveURL", mock.AnythingOfType("*context.valueCtx"), mock.Anything, mock.Anything).Return(nil)
+
+	handlerService := New(providerMock, cfg)
+
+	testURLs := []models.OriginalURL{
+		{CorrelationID: "1", OriginalURL: "http://example1.com"},
+		{CorrelationID: "2", OriginalURL: "http://example2.com"},
+		// Добавьте больше URL для тестирования, если нужно
+	}
+	body, _ := json.Marshal(testURLs)
+
+	req, err := http.NewRequest("POST", "/create-short-list-url", bytes.NewBuffer(body))
+	if err != nil {
+		b.Fatal(err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		rr := httptest.NewRecorder()
+		handler := http.HandlerFunc(handlerService.CreateShortListURL)
+		handler.ServeHTTP(rr, req.WithContext(context.Background()))
 	}
 }

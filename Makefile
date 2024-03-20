@@ -5,5 +5,11 @@ run:
 test:
 	go test ./...
 
+bench:
+	go test -bench=. -memprofile=profiles/result.pprof ./internal/handlers
+
+pprof:
+	go tool pprof -top -diff_base=profiles/base.pprof profiles/result.pprof
+
 mock:
 	cd internal && mockery --all && cd -
