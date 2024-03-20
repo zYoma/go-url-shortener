@@ -96,7 +96,6 @@ func TestCreateListURL(t *testing.T) {
 }
 
 func BenchmarkCreateShortListURL(b *testing.B) {
-	// Инициализация логгера, конфигурации, моковых сервисов и т.д.
 	cfg := GetMockConfig()
 
 	providerMock := new(mocks.URLProvider)
@@ -107,7 +106,6 @@ func BenchmarkCreateShortListURL(b *testing.B) {
 	testURLs := []models.OriginalURL{
 		{CorrelationID: "1", OriginalURL: "http://example1.com"},
 		{CorrelationID: "2", OriginalURL: "http://example2.com"},
-		// Добавьте больше URL для тестирования, если нужно
 	}
 	body, _ := json.Marshal(testURLs)
 

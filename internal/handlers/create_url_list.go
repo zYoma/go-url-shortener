@@ -20,6 +20,8 @@ func (h *HandlerService) CreateShortListURL(w http.ResponseWriter, r *http.Reque
 	var req []models.OriginalURL
 
 	w.Header().Set("Content-Type", "application/json")
+	// в результате профилирования, выявил, что большая часть памяти тратится при сериализации,
+	// использовал стороннюю библиотеку jsoniter, что позволило уменьшить потребление памяти
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		logger.Log.Error("cannot read body", zap.Error(err))
