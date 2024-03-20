@@ -18,23 +18,38 @@ import (
 	"github.com/zYoma/go-url-shortener/internal/storage"
 )
 
-var ErrCreatePool = errors.New("unable to create connection pool")
-var ErrPing = errors.New("checking connection to the database")
-var ErrURLNotFound = errors.New("url not found")
-var ErrSaveURL = errors.New("saving to database")
-var ErrCreateTable = errors.New("creating tables")
-var ErrConflict = errors.New("url already exist")
-var ErrGetURL = errors.New("select from database")
-var ErrScanRows = errors.New("scan rows")
-var ErrSRows = errors.New("line search error")
-var ErrUpdateURL = errors.New("update urls")
-var ErrURLDeleted = errors.New("URL was deleted")
+var (
+	// ErrCreatePool описывает ошибку создания пула соединений с базой данных.
+	ErrCreatePool = errors.New("unable to create connection pool")
+	// ErrPing описывает ошибку проверки соединения с базой данных.
+	ErrPing = errors.New("checking connection to the database")
+	// ErrURLNotFound описывает ошибку, возникающую, когда URL не найден в базе данных.
+	ErrURLNotFound = errors.New("url not found")
+	// ErrSaveURL описывает ошибку сохранения URL в базе данных.
+	ErrSaveURL = errors.New("saving to database")
+	// ErrCreateTable описывает ошибку создания таблиц в базе данных.
+	ErrCreateTable = errors.New("creating tables")
+	// ErrConflict описывает ошибку конфликта при попытке вставки URL, который уже существует.
+	ErrConflict = errors.New("url already exist")
+	// ErrGetURL описывает ошибку получения данных из базы данных.
+	ErrGetURL = errors.New("select from database")
+	// ErrScanRows описывает ошибку чтения строк из результата запроса.
+	ErrScanRows = errors.New("scan rows")
+	// ErrSRows описывает ошибку поиска строки в базе данных.
+	ErrSRows = errors.New("line search error")
+	// ErrUpdateURL описывает ошибку обновления данных о URL в базе данных.
+	ErrUpdateURL = errors.New("update urls")
+	// ErrURLDeleted описывает ошибку, возникающую при попытке доступа к удалённому URL.
+	ErrURLDeleted = errors.New("URL was deleted")
+)
 
+// Storage реализует интерфейс StorageProvider и предоставляет методы для работы с хранилищем URL.
 type Storage struct {
-	pool  *pgxpool.Pool
-	mutex sync.Mutex
+	pool  *pgxpool.Pool // Пул соединений с базой данных.
+	mutex sync.Mutex    // Мьютекс для синхронизации доступа к базе данных.
 }
 
+// New инициализирует новый экземпляр Storage с подключением к базе данных, указанной в конфигурации.
 func New(cfg *config.Config) (storage.StorageProvider, error) {
 	dbpool, err := pgxpool.New(context.Background(), cfg.DSN)
 	if err != nil {
@@ -43,6 +58,7 @@ func New(cfg *config.Config) (storage.StorageProvider, error) {
 	return &Storage{pool: dbpool}, nil
 }
 
+// SaveURL сохраняет указанный URL в базе данных, ассоциируя его с конкретным пользователем.
 func (s *Storage) SaveURL(ctx context.Context, fullURL string, shortURL string, userID string) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -62,6 +78,7 @@ func (s *Storage) SaveURL(ctx context.Context, fullURL string, shortURL string, 
 	return nil
 }
 
+// GetShortURL возвращает короткий URL по заданному полному URL.
 func (s *Storage) GetShortURL(ctx context.Context, fullURL string) (string, error) {
 	var shortURL string
 	row := s.pool.QueryRow(ctx, `SELECT short_url FROM url WHERE full_url = $1`, fullURL)
@@ -73,6 +90,7 @@ func (s *Storage) GetShortURL(ctx context.Context, fullURL string) (string, erro
 	return shortURL, nil
 }
 
+// GetURL возвращает полный URL по заданному короткому URL.
 func (s *Storage) GetURL(ctx context.Context, shortURL string) (string, error) {
 	var (
 		fullURL   string
@@ -97,6 +115,7 @@ func (s *Storage) GetURL(ctx context.Context, shortURL string) (string, error) {
 	return fullURL, nil
 }
 
+// Init выполняет инициализацию хранилища, включая создание необходимых таблиц.
 func (s *Storage) Init() error {
 	ctx := context.Background()
 	txOptions := pgx.TxOptions{}
@@ -125,6 +144,7 @@ func (s *Storage) Init() error {
 	return tx.Commit(ctx)
 }
 
+// Ping проверяет состояние соединения с базой данных.
 func (s *Storage) Ping(ctx context.Context) error {
 	if err := s.pool.Ping(ctx); err != nil {
 		return ErrPing
@@ -132,6 +152,7 @@ func (s *Storage) Ping(ctx context.Context) error {
 	return nil
 }
 
+// BulkSaveURL выполняет массовое сохранение данных о URL для указанного пользователя.
 func (s *Storage) BulkSaveURL(ctx context.Context, data []models.InsertData, userID string) error {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
@@ -160,6 +181,7 @@ func (s *Storage) BulkSaveURL(ctx context.Context, data []models.InsertData, use
 	return nil
 }
 
+// GetUserURLs возвращает список URL, созданных пользователем.
 func (s *Storage) GetUserURLs(ctx context.Context, baseURL string, userID string) ([]models.UserURLS, error) {
 	var urls []models.UserURLS
 	rows, err := s.pool.Query(ctx, `SELECT short_url, full_url FROM url WHERE user_id = $1`, userID)
@@ -188,6 +210,7 @@ func (s *Storage) GetUserURLs(ctx context.Context, baseURL string, userID string
 	return urls, nil
 }
 
+// DeleteListURL удаляет список URL для заданных пользователей.
 func (s *Storage) DeleteListURL(ctx context.Context, messages []models.UserListURLForDelete) error {
 	if len(messages) == 0 {
 		// Нет данных для обработки

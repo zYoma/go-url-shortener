@@ -17,6 +17,16 @@ import (
 	"go.uber.org/zap"
 )
 
+// CreateURL обрабатывает HTTP-запросы для создания короткой версии одиночного URL.
+// В теле запроса ожидается строка, содержащая оригинальный URL. Метод читает тело запроса,
+// проверяет, что URL не пустой, и использует сервис для генерации короткой версии URL и его сохранения.
+// В случае успеха, в ответе возвращается созданный короткий URL. В случае ошибок возвращает
+// соответствующие HTTP-статусы и описания ошибок.
+//
+// Параметры:
+//
+//	w http.ResponseWriter: интерфейс для отправки HTTP ответов.
+//	req *http.Request: структура, представляющая HTTP запрос.
 func (h *HandlerService) CreateURL(w http.ResponseWriter, req *http.Request) {
 	// получаем тело запроса
 	body, err := io.ReadAll(req.Body)
@@ -62,6 +72,17 @@ func (h *HandlerService) CreateURL(w http.ResponseWriter, req *http.Request) {
 	fmt.Fprintf(w, "%s/%s", h.cfg.BaseShortURL, shortURL)
 }
 
+// CreateShortURL обрабатывает HTTP-запросы для создания короткой версии URL на основе JSON-структуры.
+// В теле запроса ожидается JSON объект, содержащий оригинальный URL и дополнительные данные.
+// Метод декодирует тело запроса, валидирует полученные данные, и в случае корректности,
+// использует сервис для генерации короткой версии URL и его сохранения.
+// В ответ клиенту отправляется JSON объект с результатом операции. В случае ошибок возвращает
+// соответствующие HTTP-статусы и описания ошибок в формате JSON.
+//
+// Параметры:
+//
+//	w http.ResponseWriter: интерфейс для отправки HTTP ответов.
+//	r *http.Request: структура, представляющая HTTP запрос.
 func (h *HandlerService) CreateShortURL(w http.ResponseWriter, r *http.Request) {
 	var req models.CreateShortURLRequest
 

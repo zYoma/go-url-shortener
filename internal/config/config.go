@@ -21,15 +21,20 @@ const (
 	envTokenSecret   = "TOKEN_SECRET"
 )
 
+// Config определяет конфигурацию приложения, собираемую из аргументов командной строки и переменных окружения.
 type Config struct {
-	RunAddr      string
-	BaseShortURL string
-	LogLevel     string
-	StorageFile  string
-	DSN          string
-	TokenSecret  string
+	RunAddr      string // Адрес и порт для запуска сервера.
+	BaseShortURL string // Базовый URL для коротких ссылок.
+	LogLevel     string // Уровень логирования.
+	StorageFile  string // Имя файла для хранения данных.
+	DSN          string // Data Source Name для подключения к БД.
+	TokenSecret  string // Секрет для подписи JWT токенов.
 }
 
+// GetConfig парсит аргументы командной строки и переменные окружения,
+// создавая и возвращая конфигурацию приложения. Приоритет имеют значения из переменных окружения.
+//
+// Возвращает сконфигурированный экземпляр *Config.
 func GetConfig() *Config {
 	// парсим аргументы командной строки
 	flag.StringVar(&flagRunAddr, "a", ":8080", "address and port to run server")
