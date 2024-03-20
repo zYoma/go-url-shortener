@@ -13,6 +13,7 @@ import (
 	"github.com/zYoma/go-url-shortener/internal/storage"
 )
 
+// возможные ошибки пакета
 var (
 	// ErrURLNotFound описывает ошибку, возникающую, когда URL не может быть найден в хранилище.
 	ErrURLNotFound = errors.New("url not found")

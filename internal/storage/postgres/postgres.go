@@ -18,6 +18,7 @@ import (
 	"github.com/zYoma/go-url-shortener/internal/storage"
 )
 
+// возможные ошибки пакета
 var (
 	// ErrCreatePool описывает ошибку создания пула соединений с базой данных.
 	ErrCreatePool = errors.New("unable to create connection pool")
