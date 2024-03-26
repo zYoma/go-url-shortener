@@ -16,16 +16,32 @@ import (
 	"go.uber.org/zap"
 )
 
+// HandlerService инкапсулирует логику обработки HTTP-запросов,
+// предоставляя методы для управления короткими URL. Структура включает провайдер
+// для взаимодействия с хранилищем данных, конфигурацию приложения и канал
+// для асинхронного удаления списка URL, принадлежащих пользователю.
 type HandlerService struct {
-	provider storage.URLProvider
-	cfg      *config.Config
-	delChan  chan models.UserListURLForDelete
+	provider storage.URLProvider              // Интерфейс взаимодействия с хранилищем URL.
+	cfg      *config.Config                   // Конфигурация приложения.
+	delChan  chan models.UserListURLForDelete // Канал для удаления списка URL.
 }
 
+// New инициализирует и возвращает новый экземпляр HandlerService.
+// Этот метод принимает провайдер для взаимодействия с хранилищем данных и конфигурацию приложения.
+//
+// provider: провайдер для взаимодействия с хранилищем данных.
+// cfg: конфигурация приложения.
+//
+// Возвращает указатель на созданный экземпляр HandlerService.
 func New(provider storage.URLProvider, cfg *config.Config) *HandlerService {
 	return &HandlerService{provider: provider, cfg: cfg, delChan: make(chan models.UserListURLForDelete, 1024)}
 }
 
+// GetRouter создает и возвращает роутер с настроенными маршрутами и middleware.
+// В этом методе определяются маршруты для создания и получения коротких URL,
+// а также для удаления списка URL и получения списка URL, принадлежащих пользователю.
+//
+// Возвращает роутер с настроенными маршрутами.
 func (h *HandlerService) GetRouter() chi.Router {
 	// создаем роутер
 	r := chi.NewRouter()
@@ -48,7 +64,11 @@ func (h *HandlerService) GetRouter() chi.Router {
 	return r
 }
 
-// deleteMessages постоянно удаляет несколько сообщений из хранилища с определённым интервалом
+// DeleteMessages постоянно слушает канал delChan для асинхронного получения и удаления
+// списков URL из хранилища. Метод использует таймер для периодического удаления
+// накопившихся списков URL и прекращает работу при получении сигнала завершения.
+//
+// wg *sync.WaitGroup: группа ожидания для синхронизации завершения горутины.
 func (h *HandlerService) DeleteMessages(wg *sync.WaitGroup) {
 	defer wg.Done()
 
@@ -81,6 +101,11 @@ func (h *HandlerService) DeleteMessages(wg *sync.WaitGroup) {
 	}
 }
 
+// saveMessages удаляет списки URL, указанные в messages, из хранилища.
+// Этот внутренний метод вызывается из DeleteMessages для фактического удаления данных.
+// После успешного удаления список messages очищается.
+//
+// messages *[]models.UserListURLForDelete: указатель на список сообщений для удаления.
 func (h *HandlerService) saveMessages(messages *[]models.UserListURLForDelete) {
 	if len(*messages) == 0 {
 		return

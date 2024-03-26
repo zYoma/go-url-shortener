@@ -8,18 +8,45 @@ import (
 
 	"github.com/go-chi/render"
 	"github.com/go-playground/validator/v10"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/zYoma/go-url-shortener/internal/logger"
 	"github.com/zYoma/go-url-shortener/internal/models"
 	"github.com/zYoma/go-url-shortener/internal/services/generator"
 	"go.uber.org/zap"
 )
 
+// CreateShortListURL обрабатывает HTTP POST запросы для создания коротких URL из списка длинных URL.
+// В теле запроса ожидается JSON массив с объектами, содержащими исходные длинные URL и идентификаторы для корреляции.
+// Этот метод использует стороннюю библиотеку jsoniter для эффективной работы с JSON,
+// что позволяет уменьшить потребление памяти при сериализации и десериализации JSON данных.
+//
+// После чтения и десериализации запроса каждый URL валидируется.
+// Для каждого валидного URL генерируется короткий URL, который сохраняется в хранилище с использованием
+// предоставленного провайдера хранилища. В ответ клиенту отправляется JSON массив с короткими URL и их корреляционными идентификаторами.
+//
+// В случае неудачи при чтении тела запроса, десериализации JSON, валидации URL или сохранении в хранилище,
+// клиенту отправляется соответствующий HTTP статус ошибки и описание ошибки в формате JSON.
+//
+// Параметры:
+//
+//	w http.ResponseWriter: интерфейс для отправки HTTP ответов.
+//	r *http.Request: структура, представляющая HTTP запрос.
 func (h *HandlerService) CreateShortListURL(w http.ResponseWriter, r *http.Request) {
 
 	var req []models.OriginalURL
 
 	w.Header().Set("Content-Type", "application/json")
-	err := render.DecodeJSON(r.Body, &req)
+	// в результате профилирования, выявил, что большая часть памяти тратится при сериализации,
+	// использовал стороннюю библиотеку jsoniter, что позволило  уменьшить потребление памяти
+	body, err := io.ReadAll(r.Body)
+	if err != nil {
+		logger.Log.Error("cannot read body", zap.Error(err))
+		w.WriteHeader(http.StatusBadRequest)
+		render.JSON(w, r, models.Error("cannot read body"))
+		return
+	}
+	defer r.Body.Close()
+	err = jsoniter.Unmarshal(body, &req)
 
 	if errors.Is(err, io.EOF) || len(req) == 0 {
 		logger.Log.Error("request body is empty")
@@ -35,8 +62,12 @@ func (h *HandlerService) CreateShortListURL(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
+	// Создаём экземпляр валидатора один раз
+	validate := validator.New()
+
 	for _, url := range req {
-		if err := validator.New().Struct(url); err != nil {
+		// Используем уже созданный экземпляр валидатора для проверки
+		if err := validate.Struct(url); err != nil {
 			validateErr := err.(validator.ValidationErrors)
 			logger.Log.Error("request validate error", zap.Error(err))
 			w.WriteHeader(http.StatusBadRequest)
@@ -69,6 +100,14 @@ func (h *HandlerService) CreateShortListURL(w http.ResponseWriter, r *http.Reque
 
 	w.WriteHeader(http.StatusCreated)
 
-	render.JSON(w, r, &responseData)
+	jsonData, err := jsoniter.Marshal(responseData)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	w.Write(jsonData)
 
 }
