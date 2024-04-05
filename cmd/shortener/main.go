@@ -2,13 +2,24 @@ package main
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/zYoma/go-url-shortener/internal/app"
 	"github.com/zYoma/go-url-shortener/internal/config"
 	"github.com/zYoma/go-url-shortener/internal/logger"
 )
 
+var (
+	buildVersion = "N/A"
+	buildDate    = "N/A"
+	buildCommit  = "N/A"
+)
+
 func main() {
+	fmt.Printf("Build version: %s\n", buildVersion)
+	fmt.Printf("Build date: %s\n", buildDate)
+	fmt.Printf("Build commit: %s\n", buildCommit)
+
 	// получаем конфигурацию
 	cfg := config.GetConfig()
 
