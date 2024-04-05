@@ -13,3 +13,6 @@ pprof:
 
 mock:
 	cd internal && mockery --all && cd -
+
+lint:
+	go run cmd/staticlint/main.go ./...

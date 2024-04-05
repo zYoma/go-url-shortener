@@ -108,7 +108,7 @@ func (h *HandlerService) CreateShortURL(w http.ResponseWriter, r *http.Request) 
 	}
 
 	// валидируем поля
-	if err := validator.New().Struct(req); err != nil {
+	if err = validator.New().Struct(req); err != nil {
 		validateErr := err.(validator.ValidationErrors)
 		logger.Log.Error("request validate error", zap.Error(err))
 		w.WriteHeader(http.StatusBadRequest)

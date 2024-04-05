@@ -23,7 +23,7 @@ type App struct {
 	Server *server.HTTPServer
 }
 
-// ErrServerStopped описывает ошибку, возникающую при остановке сервера.
+// ErrServerStoped описывает ошибку, возникающую при остановке сервера.
 var ErrServerStoped = errors.New("server stoped")
 
 // New инициализирует и возвращает новый экземпляр App, готовый к запуску.

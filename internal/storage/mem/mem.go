@@ -53,7 +53,7 @@ func (s *Storage) SaveURL(ctx context.Context, fullURL string, shortURL string, 
 	return nil
 }
 
-// GetUrl from db.
+// GetURL from db.
 func (s *Storage) GetURL(ctx context.Context, shortURL string) (string, error) {
 	fullURL, ok := s.db[shortURL]
 	if !ok {

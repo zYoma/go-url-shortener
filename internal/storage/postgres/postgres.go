@@ -194,7 +194,7 @@ func (s *Storage) GetUserURLs(ctx context.Context, baseURL string, userID string
 
 	for rows.Next() {
 		var pair models.UserURLS
-		if err := rows.Scan(&pair.ShortURL, &pair.OriginalURL); err != nil {
+		if err = rows.Scan(&pair.ShortURL, &pair.OriginalURL); err != nil {
 			logger.Log.Sugar().Errorf("Не удалось прочитать строку: %s", err)
 			return nil, ErrScanRows
 		}
