@@ -1,0 +1,25 @@
+linters-settings:
+  gofmt:
+    simplify: true
+  govet:
+    enable:
+      - shadow
+
+linters:
+  enable:
+    - govet
+    - gofmt
+    - errcheck
+    - staticcheck
+  disable:
+    - gochecknoinits
+
+issues:
+  exclude-rules:
+    - linters:
+        - govet
+      text: "composite literal uses unkeyed fields"
+
+run:
+  skip-files:
+    - '.*_test\.go$'

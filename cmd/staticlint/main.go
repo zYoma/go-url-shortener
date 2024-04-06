@@ -34,22 +34,37 @@ var ExitCheckAnalyzer = &analysis.Analyzer{
 // run выполняет проверку каждого файла исходного кода в пакете на наличие вызовов os.Exit.
 func run(pass *analysis.Pass) (interface{}, error) {
 	for _, file := range pass.Files {
-		// Проверяем, что мы находимся в пакете main и в функции main
-		if pass.Pkg.Name() == "main" && file.Name.Name == "main" {
-			ast.Inspect(file, func(node ast.Node) bool {
-				switch x := node.(type) {
-				case *ast.CallExpr:
-					if fun, ok := x.Fun.(*ast.SelectorExpr); ok {
-						if pkg, ok := fun.X.(*ast.Ident); ok && pkg.Name == "os" && fun.Sel.Name == "Exit" {
-							pass.Reportf(x.Pos(), "direct call to os.Exit in main function is prohibited")
-						}
-					}
-				}
-				return true
-			})
+		if pass.Pkg.Name() != "main" || file.Name.Name != "main" {
+			continue
 		}
+		checkFileForOsExit(pass, file)
 	}
 	return nil, nil
+}
+
+func checkFileForOsExit(pass *analysis.Pass, file *ast.File) {
+	ast.Inspect(file, func(node ast.Node) bool {
+		// Если узел не является вызовом функции, пропускаем его
+		callExpr, ok := node.(*ast.CallExpr)
+		if !ok {
+			return true
+		}
+
+		// Проверяем, является ли функция вызовом os.Exit
+		fun, ok := callExpr.Fun.(*ast.SelectorExpr)
+		if !ok {
+			return true
+		}
+
+		pkg, ok := fun.X.(*ast.Ident)
+		if !ok || pkg.Name != "os" || fun.Sel.Name != "Exit" {
+			return true
+		}
+
+		// Сообщаем о недопустимости вызова os.Exit
+		pass.Reportf(callExpr.Pos(), "direct call to os.Exit in main function is prohibited")
+		return true
+	})
 }
 
 // main читает конфигурацию, подготавливает и запускает анализаторы.

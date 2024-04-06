@@ -127,9 +127,13 @@ func (s *Storage) Init() error {
 		return ErrCreateTable
 	}
 
-	defer tx.Rollback(ctx)
+	defer func() {
+		if err = tx.Rollback(ctx); err != nil && err != sql.ErrTxDone {
+			logger.Log.Sugar().Errorf("Ошибка при откате транзакции: %v", err)
+		}
+	}()
 
-	tx.Exec(ctx, `
+	_, err = tx.Exec(ctx, `
 		CREATE TABLE IF NOT EXISTS url (
 			"id" SERIAL PRIMARY KEY,
 			"full_url" VARCHAR(250) NOT NULL,
@@ -139,9 +143,16 @@ func (s *Storage) Init() error {
 			"is_deleted" BOOLEAN DEFAULT FALSE
 		);
     `)
+	if err != nil {
+		logger.Log.Sugar().Errorf("Ошибка при создании таблицы: %s", err)
+		return ErrCreateTable
+	}
 
-	tx.Exec(ctx, `CREATE UNIQUE INDEX IF NOT EXISTS idx_full_url_unique ON url(full_url);`)
-
+	_, err = tx.Exec(ctx, `CREATE UNIQUE INDEX IF NOT EXISTS idx_full_url_unique ON url(full_url);`)
+	if err != nil {
+		logger.Log.Sugar().Errorf("Ошибка при создании индекса: %s", err)
+		return ErrCreateTable
+	}
 	return tx.Commit(ctx)
 }
 
