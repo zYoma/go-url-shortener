@@ -25,6 +25,8 @@ var (
 	ErrInfoFile = errors.New("error getting file information")
 	// ErrDecodeFile описывает ошибку декодирования данных из файла хранилища.
 	ErrDecodeFile = errors.New("file decoding error")
+	// ErrSaveFile описывает ошибку сохранения файла.
+	ErrSaveFile = errors.New("save file error")
 )
 
 // Storage реализует интерфейс StorageProvider для хранения URL в памяти
@@ -48,12 +50,14 @@ func (s *Storage) SaveURL(ctx context.Context, fullURL string, shortURL string, 
 
 	s.db[shortURL] = fullURL
 
-	s.saveFile()
+	if err := s.saveFile(); err != nil {
+		return ErrSaveFile
+	}
 
 	return nil
 }
 
-// GetUrl from db.
+// GetURL from db.
 func (s *Storage) GetURL(ctx context.Context, shortURL string) (string, error) {
 	fullURL, ok := s.db[shortURL]
 	if !ok {
@@ -113,7 +117,9 @@ func (s *Storage) BulkSaveURL(ctx context.Context, data []models.InsertData, use
 		s.db[url.ShortURL] = url.OriginalURL
 	}
 
-	s.saveFile()
+	if err := s.saveFile(); err != nil {
+		return ErrSaveFile
+	}
 
 	return nil
 }

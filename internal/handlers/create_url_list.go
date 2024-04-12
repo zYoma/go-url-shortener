@@ -67,7 +67,7 @@ func (h *HandlerService) CreateShortListURL(w http.ResponseWriter, r *http.Reque
 
 	for _, url := range req {
 		// Используем уже созданный экземпляр валидатора для проверки
-		if err := validate.Struct(url); err != nil {
+		if err = validate.Struct(url); err != nil {
 			validateErr := err.(validator.ValidationErrors)
 			logger.Log.Error("request validate error", zap.Error(err))
 			w.WriteHeader(http.StatusBadRequest)
@@ -108,6 +108,9 @@ func (h *HandlerService) CreateShortListURL(w http.ResponseWriter, r *http.Reque
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
-	w.Write(jsonData)
-
+	_, err = w.Write(jsonData)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
