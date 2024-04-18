@@ -1,8 +1,10 @@
 package config
 
 import (
+	"encoding/json"
 	"flag"
 	"os"
+	"reflect"
 )
 
 var flagRunAddr string
@@ -14,6 +16,7 @@ var flagTokenSecret string
 var flagHTTPS bool
 var flagCertPath string
 var flagCertKeyPath string
+var flagConfigFile string
 
 const (
 	envServerAddress = "SERVER_ADDRESS"
@@ -25,6 +28,7 @@ const (
 	envHTTPS         = "ENABLE_HTTPS"
 	envCertPath      = "CERT_PATH"
 	envCertKeyPath   = "CERT_KEY_PATH"
+	envConfigFile    = "CONFIG"
 )
 
 // Config определяет конфигурацию приложения, собираемую из аргументов командной строки и переменных окружения.
@@ -40,21 +44,50 @@ type Config struct {
 	CertKeyPath  string // путь до ключа
 }
 
+type fileConfig struct {
+	ServerAddress   string `json:"server_address"`
+	BaseURL         string `json:"base_url"`
+	LogLevel        string `json:"log_level"`
+	FileStoragePath string `json:"file_storage_path"`
+	DatabaseDSN     string `json:"database_dsn"`
+	TokenSecret     string `json:"token_secret"`
+	EnableHTTPS     bool   `json:"enable_https"`
+	CertPath        string `json:"cert_path"`
+	CertKeyPath     string `json:"cert_key_path"`
+}
+
+func parseConfigFile(filePath string) (*fileConfig, error) {
+	if filePath == "" {
+		return nil, nil
+	}
+	fileBytes, err := os.ReadFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+	var conf fileConfig
+	if err := json.Unmarshal(fileBytes, &conf); err != nil {
+		return nil, err
+	}
+	return &conf, nil
+}
+
 // GetConfig парсит аргументы командной строки и переменные окружения,
 // создавая и возвращая конфигурацию приложения. Приоритет имеют значения из переменных окружения.
 //
 // Возвращает сконфигурированный экземпляр *Config.
-func GetConfig() *Config {
+func GetConfig() (*Config, error) {
+
 	// парсим аргументы командной строки
-	flag.StringVar(&flagRunAddr, "a", ":8080", "address and port to run server")
-	flag.StringVar(&flagBaseShortURL, "b", "http://localhost:8080", "base short url")
-	flag.StringVar(&flagLogLevel, "l", "info", "log level")
-	flag.StringVar(&flagStorageFileNmae, "f", "/tmp/short-url-db.json", "starage file name")
+	flag.StringVar(&flagRunAddr, "a", "", "address and port to run server")
+	flag.StringVar(&flagBaseShortURL, "b", "", "base short url")
+	flag.StringVar(&flagLogLevel, "l", "", "log level")
+	flag.StringVar(&flagStorageFileNmae, "f", "", "starage file name")
 	flag.StringVar(&flagDSN, "d", "", "DB DSN")
-	flag.StringVar(&flagTokenSecret, "j", "secret_for_test_only", "secret for jwt")
+	flag.StringVar(&flagTokenSecret, "j", "", "secret for jwt")
 	flag.BoolVar(&flagHTTPS, "s", false, "enable HTTPS")
-	flag.StringVar(&flagCertPath, "cr", "certs/cert.pem", "path to cert")
-	flag.StringVar(&flagCertKeyPath, "ck", "certs/key.pem", "path to cert key")
+	flag.StringVar(&flagCertPath, "cr", "", "path to cert")
+	flag.StringVar(&flagCertKeyPath, "ck", "", "path to cert key")
+	flag.StringVar(&flagConfigFile, "c", "config.json", "path to config file")
 	flag.Parse()
 
 	// если есть переменные окружения, используем их значения
@@ -87,6 +120,21 @@ func GetConfig() *Config {
 		flagCertKeyPath = envCertKey
 	}
 
+	confFromFile, err := parseConfigFile(flagConfigFile)
+	if err != nil {
+		return nil, err
+	}
+
+	setValueFromFileConfig(&flagRunAddr, confFromFile.ServerAddress)
+	setValueFromFileConfig(&flagBaseShortURL, confFromFile.BaseURL)
+	setValueFromFileConfig(&flagLogLevel, confFromFile.LogLevel)
+	setValueFromFileConfig(&flagStorageFileNmae, confFromFile.FileStoragePath)
+	setValueFromFileConfig(&flagDSN, confFromFile.DatabaseDSN)
+	setValueFromFileConfig(&flagTokenSecret, confFromFile.TokenSecret)
+	setValueFromFileConfig(&flagHTTPS, confFromFile.EnableHTTPS)
+	setValueFromFileConfig(&flagCertPath, confFromFile.CertPath)
+	setValueFromFileConfig(&flagCertKeyPath, confFromFile.CertKeyPath)
+
 	return &Config{
 		RunAddr:      flagRunAddr,
 		BaseShortURL: flagBaseShortURL,
@@ -97,5 +145,25 @@ func GetConfig() *Config {
 		EnableHTTPS:  flagHTTPS,
 		CertPath:     flagCertPath,
 		CertKeyPath:  flagCertKeyPath,
+	}, nil
+}
+
+func nilValue[T comparable]() T {
+	var zero T
+	return zero
+}
+
+// setValueFromFileConfig проставляет значения из файла конфигурации, если текущее значение пустое
+// дженерики использовал чтобы работать как с bool так и со строкой
+func setValueFromFileConfig[T comparable](varPtr *T, varFile T) {
+	switch reflect.TypeOf(*varPtr).Kind() {
+	case reflect.String:
+		if *varPtr == nilValue[T]() && varFile != nilValue[T]() {
+			*varPtr = varFile
+		}
+	case reflect.Bool:
+		if *varPtr == nilValue[T]() {
+			*varPtr = varFile
+		}
 	}
 }

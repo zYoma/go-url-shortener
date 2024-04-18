@@ -15,7 +15,7 @@ import (
 
 func ExampleHandlerService_CreateShortListURL() {
 	// получаем конфигурацию
-	cfg := config.GetConfig()
+	cfg, _ := config.GetConfig()
 
 	// создаем провайдер для storage
 	provider, _ := mem.New(cfg)
@@ -48,7 +48,7 @@ func ExampleHandlerService_CreateShortListURL() {
 
 func ExampleHandlerService_DeleteShortListURL() {
 	// получаем конфигурацию
-	cfg := config.GetConfig()
+	cfg, _ := config.GetConfig()
 
 	// создаем провайдер для storage
 	provider, _ := mem.New(cfg)

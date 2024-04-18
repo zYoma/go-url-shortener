@@ -1,0 +1,11 @@
+{
+    "server_address": ":8080", 
+    "base_url": "http://localhost:8080", 
+    "log_level": "info",
+    "file_storage_path": "/tmp/short-url-db.json", 
+    "database_dsn": "", 
+    "token_secret": "secret_for_test_only",
+    "enable_https": true ,
+    "cert_path": "certs/cert.pem",
+    "cert_key_path": "certs/key.pem"
+}

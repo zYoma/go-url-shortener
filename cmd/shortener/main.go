@@ -21,10 +21,13 @@ func main() {
 	fmt.Printf("Build commit: %s\n", buildCommit)
 
 	// получаем конфигурацию
-	cfg := config.GetConfig()
+	cfg, err := config.GetConfig()
+	if err != nil {
+		panic(err)
+	}
 
 	// инициализируем логер
-	if err := logger.Initialize(cfg.LogLevel); err != nil {
+	if err = logger.Initialize(cfg.LogLevel); err != nil {
 		panic(err)
 	}
 
