@@ -87,7 +87,7 @@ func GetConfig() (*Config, error) {
 	flag.BoolVar(&flagHTTPS, "s", false, "enable HTTPS")
 	flag.StringVar(&flagCertPath, "cr", "", "path to cert")
 	flag.StringVar(&flagCertKeyPath, "ck", "", "path to cert key")
-	flag.StringVar(&flagConfigFile, "c", "config.json", "path to config file")
+	flag.StringVar(&flagConfigFile, "c", "", "path to config file")
 	flag.Parse()
 
 	// если есть переменные окружения, используем их значения
@@ -125,16 +125,17 @@ func GetConfig() (*Config, error) {
 		return nil, err
 	}
 
-	setValueFromFileConfig(&flagRunAddr, confFromFile.ServerAddress)
-	setValueFromFileConfig(&flagBaseShortURL, confFromFile.BaseURL)
-	setValueFromFileConfig(&flagLogLevel, confFromFile.LogLevel)
-	setValueFromFileConfig(&flagStorageFileNmae, confFromFile.FileStoragePath)
-	setValueFromFileConfig(&flagDSN, confFromFile.DatabaseDSN)
-	setValueFromFileConfig(&flagTokenSecret, confFromFile.TokenSecret)
-	setValueFromFileConfig(&flagHTTPS, confFromFile.EnableHTTPS)
-	setValueFromFileConfig(&flagCertPath, confFromFile.CertPath)
-	setValueFromFileConfig(&flagCertKeyPath, confFromFile.CertKeyPath)
-
+	if confFromFile != nil {
+		setValueFromFileConfig(&flagRunAddr, confFromFile.ServerAddress)
+		setValueFromFileConfig(&flagBaseShortURL, confFromFile.BaseURL)
+		setValueFromFileConfig(&flagLogLevel, confFromFile.LogLevel)
+		setValueFromFileConfig(&flagStorageFileNmae, confFromFile.FileStoragePath)
+		setValueFromFileConfig(&flagDSN, confFromFile.DatabaseDSN)
+		setValueFromFileConfig(&flagTokenSecret, confFromFile.TokenSecret)
+		setValueFromFileConfig(&flagHTTPS, confFromFile.EnableHTTPS)
+		setValueFromFileConfig(&flagCertPath, confFromFile.CertPath)
+		setValueFromFileConfig(&flagCertKeyPath, confFromFile.CertKeyPath)
+	}
 	return &Config{
 		RunAddr:      flagRunAddr,
 		BaseShortURL: flagBaseShortURL,
