@@ -21,7 +21,8 @@ type HTTPServer struct {
 	// wg используется для отслеживания и управления параллельной обработкой
 	// входящих HTTP-запросов. WaitGroup обеспечивает ожидание завершения
 	// всех активных запросов перед остановкой сервера.
-	wg *sync.WaitGroup
+	wg  *sync.WaitGroup
+	cfg *config.Config
 }
 
 // New создает и возвращает новый экземпляр HTTPServer, готовый к запуску.
@@ -57,6 +58,7 @@ func New(
 	return &HTTPServer{
 		server: server,
 		wg:     &wg,
+		cfg:    cfg,
 	}
 }
 
@@ -68,11 +70,19 @@ func New(
 // кроме ошибки http.ErrServerClosed, которая считается ожидаемым результатом
 // корректной остановки сервера.
 func (a *HTTPServer) Run() error {
-	err := a.server.ListenAndServe()
-	if err != nil && err != http.ErrServerClosed {
-		return err
+	if a.cfg.EnableHTTPS {
+		certFile := a.cfg.CertPath
+		keyFile := a.cfg.CertKeyPath
+		err := http.ListenAndServeTLS(":443", certFile, keyFile, nil)
+		if err != nil && err != http.ErrServerClosed {
+			return err
+		}
+	} else {
+		err := a.server.ListenAndServe()
+		if err != nil && err != http.ErrServerClosed {
+			return err
+		}
 	}
-
 	return nil
 }
 

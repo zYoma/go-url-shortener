@@ -5,7 +5,7 @@ build:
 	go build -o $(BINARY_NAME) -ldflags "-X 'main.buildVersion=$(VERSION)' -X 'main.buildDate=$$(date)' -X 'main.buildCommit=$$(git rev-parse HEAD)'" cmd/shortener/main.go 
 
 run: build
-	./$(BINARY_NAME) -d postgresql://postgres:postgres@127.0.0.1:9432/shorther
+	./$(BINARY_NAME)  -s
 
 test:
 	go test ./...
