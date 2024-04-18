@@ -38,6 +38,7 @@ type HTTPServer struct {
 func New(
 	provider storage.URLProvider,
 	cfg *config.Config,
+	stopChan chan int64,
 ) *HTTPServer {
 
 	// создаем сервис обработчик
@@ -46,7 +47,7 @@ func New(
 	// запускаем горутину для удаления сообщений
 	var wg sync.WaitGroup
 	wg.Add(1) // если нужно будет запустить несколько горутин, инкриментировать в цикле
-	go service.DeleteMessages(&wg)
+	go service.DeleteMessages(&wg, stopChan)
 
 	// получаем роутер
 	router := service.GetRouter()
@@ -97,6 +98,7 @@ func (a *HTTPServer) Run() error {
 // Возвращает ошибку, если произошла ошибка при остановке сервера.
 func (a *HTTPServer) Shutdown(ctx context.Context) error {
 	// ждем пока все горутины завершатся
+	// остановим приложение только после завершения фоновых задач
 	a.wg.Wait()
 	return a.server.Shutdown(ctx)
 }
