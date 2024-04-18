@@ -87,7 +87,7 @@ func GetConfig() (*Config, error) {
 	flag.BoolVar(&flagHTTPS, "s", false, "enable HTTPS")
 	flag.StringVar(&flagCertPath, "cr", "", "path to cert")
 	flag.StringVar(&flagCertKeyPath, "ck", "", "path to cert key")
-	flag.StringVar(&flagConfigFile, "c", "", "path to config file")
+	flag.StringVar(&flagConfigFile, "c", "config.json", "path to config file")
 	flag.Parse()
 
 	// если есть переменные окружения, используем их значения
