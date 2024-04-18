@@ -136,6 +136,7 @@ func GetConfig() (*Config, error) {
 		setValueFromFileConfig(&flagCertPath, confFromFile.CertPath)
 		setValueFromFileConfig(&flagCertKeyPath, confFromFile.CertKeyPath)
 	}
+
 	return &Config{
 		RunAddr:      flagRunAddr,
 		BaseShortURL: flagBaseShortURL,

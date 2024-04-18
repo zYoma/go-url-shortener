@@ -5,7 +5,7 @@
     "file_storage_path": "/tmp/short-url-db.json", 
     "database_dsn": "", 
     "token_secret": "secret_for_test_only",
-    "enable_https": true ,
+    "enable_https": false ,
     "cert_path": "certs/cert.pem",
     "cert_key_path": "certs/key.pem"
 }
