@@ -158,6 +158,11 @@ func nilValue[T comparable]() T {
 // setValueFromFileConfig проставляет значения из файла конфигурации, если текущее значение пустое
 // дженерики использовал чтобы работать как с bool так и со строкой
 func setValueFromFileConfig[T comparable](varPtr *T, varFile T) {
+	if varPtr == nil {
+		// Обрабатываем случай, когда varPtr является nil
+		return
+	}
+
 	switch reflect.TypeOf(*varPtr).Kind() {
 	case reflect.String:
 		if *varPtr == nilValue[T]() && varFile != nilValue[T]() {
