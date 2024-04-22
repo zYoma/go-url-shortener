@@ -20,7 +20,8 @@ import (
 // его зависимости для удобного управления.
 type App struct {
 	// Server - это HTTP-сервер приложения, который обрабатывает входящие запросы.
-	Server *server.HTTPServer
+	Server   *server.HTTPServer
+	stopChan chan int64
 }
 
 // ErrServerStoped описывает ошибку, возникающую при остановке сервера.
@@ -44,11 +45,13 @@ func New(cfg *config.Config) (*App, error) {
 	if err := provider.Init(); err != nil {
 		return nil, err
 	}
+	// канал для уведомления фоновой горутины об остановке приложения
+	stopChan := make(chan int64, 1)
 
 	// создаем сервер
-	server := server.New(provider, cfg)
+	server := server.New(provider, cfg, stopChan)
 
-	return &App{Server: server}, nil
+	return &App{Server: server, stopChan: stopChan}, nil
 }
 
 // Run запускает приложение, включая HTTP-сервер и обработку сигналов
@@ -72,12 +75,13 @@ func (s *App) Run() error {
 		}
 	}()
 
-	// Ожидание сигнала завершения работы
 	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
 	select {
 	case <-sigChan:
+		// уведомляем горутину что надо остановиться
+		s.stopChan <- 1
 		// При получении сигнала завершения останавливаем сервер
 		if err := s.Server.Shutdown(ctx); err != nil {
 			return err

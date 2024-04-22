@@ -2,10 +2,7 @@ package handlers
 
 import (
 	"context"
-	"os"
-	"os/signal"
 	"sync"
-	"syscall"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -69,17 +66,13 @@ func (h *HandlerService) GetRouter() chi.Router {
 // накопившихся списков URL и прекращает работу при получении сигнала завершения.
 //
 // wg *sync.WaitGroup: группа ожидания для синхронизации завершения горутины.
-func (h *HandlerService) DeleteMessages(wg *sync.WaitGroup) {
+func (h *HandlerService) DeleteMessages(wg *sync.WaitGroup, stopChan chan int64) {
 	defer wg.Done()
 
 	// будем сохранять сообщения, накопленные за последние 10 секунд
 	ticker := time.NewTicker(10 * time.Second)
 
 	var messages []models.UserListURLForDelete
-
-	// Канал для перехвата сигналов завершения работы
-	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 
 	for {
 		select {
@@ -93,7 +86,7 @@ func (h *HandlerService) DeleteMessages(wg *sync.WaitGroup) {
 		case <-ticker.C:
 			// сработал таймер, запускаем удаление
 			h.saveMessages(&messages)
-		case <-sigChan:
+		case <-stopChan:
 			// сигнал остановки приложение
 			h.saveMessages(&messages)
 			return
