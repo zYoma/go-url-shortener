@@ -93,6 +93,7 @@ type UserListURLForDelete struct {
 	URLS   []string // Список URL для удаления.
 }
 
+// ServiceStat описывает структуру данных для запроса статистики сервера.
 type ServiceStat struct {
 	Users int `json:"users"` // количество пользователей в сервисе.
 	URLS  int `json:"urls"`  // количество сокращённых URL в сервисе.

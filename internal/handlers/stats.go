@@ -8,6 +8,13 @@ import (
 	"github.com/zYoma/go-url-shortener/internal/models"
 )
 
+// GetStats обрабатывает запрос /api/internal/stats.
+// Проверяет, принадлежит ли IP-адрес клиента доверенной подсети,
+// и возвращает статистику службы в формате JSON.
+// Если IP-адрес клиента не принадлежит доверенной подсети,
+// возвращает статус 403 Forbidden.
+// Если происходит ошибка при получении статистики из базы данных,
+// возвращает статус 500 Internal Server Error.
 func (h *HandlerService) GetStats(w http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
 	if h.cfg.TrustedSubnet == "" {
