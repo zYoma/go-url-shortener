@@ -92,3 +92,8 @@ type UserListURLForDelete struct {
 	UserID string   // Идентификатор пользователя.
 	URLS   []string // Список URL для удаления.
 }
+
+type ServiceStat struct {
+	Users int `json:"users"` // количество пользователей в сервисе.
+	URLS  int `json:"urls"`  // количество сокращённых URL в сервисе.
+}

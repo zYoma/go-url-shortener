@@ -258,3 +258,18 @@ func (s *Storage) DeleteListURL(ctx context.Context, messages []models.UserListU
 
 	return nil
 }
+
+// GetServiceStats получает статистику сервиса.
+func (s *Storage) GetServiceStats(ctx context.Context) (models.ServiceStat, error) {
+	var (
+		URLS  int
+		Users int
+	)
+	row := s.pool.QueryRow(ctx, `SELECT COUNT(full_url), COUNT(DISTINCT user_id) FROM url;`)
+	err := row.Scan(&URLS, &Users)
+	if err != nil {
+		return models.ServiceStat{}, err
+	}
+
+	return models.ServiceStat{URLS: URLS, Users: Users}, nil
+}
