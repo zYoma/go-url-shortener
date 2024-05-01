@@ -1,4 +1,4 @@
-package grpc_handlers
+package grpchandlers
 
 import (
 	"context"
@@ -38,24 +38,19 @@ func (h *HandlerService) CreateShortURL(ctx context.Context, req *pb.CreateShort
 		URL: req.GetUrl(),
 	}
 
-	// валидируем поля
 	if err := validator.New().Struct(request); err != nil {
 		validateErr := err.(validator.ValidationErrors)
 		return nil, status.Errorf(codes.InvalidArgument, "request validation error: %v", validateErr)
 	}
 
-	// создаем короткую ссылку
 	shortURL := generator.GenerateShortURL()
 
 	// получаем userID из контекста
 	userID, ok := ctx.Value(UserIDKey).(string)
 	if !ok {
-		// Обработка случая, если идентификатор пользователя отсутствует в контексте
-		// Например, возвращаем ошибку или принимаем решение по умолчанию
 		return nil, errors.New("user ID not found in context")
 	}
 
-	// сохраняем ссылку в хранилище
 	if err := h.provider.SaveURL(ctx, request.URL, shortURL, userID); err != nil {
 		if errors.Is(err, postgres.ErrConflict) {
 			resultShortURL, _ := h.provider.GetShortURL(ctx, request.URL)
@@ -66,7 +61,6 @@ func (h *HandlerService) CreateShortURL(ctx context.Context, req *pb.CreateShort
 		return nil, status.Error(codes.Internal, "failed to save link to db")
 	}
 
-	// Возвращаем ответ с короткой ссылкой
 	return &pb.CreateShortURLResponse{
 		Result: fmt.Sprintf("%s/%s", h.cfg.BaseShortURL, shortURL),
 	}, nil
@@ -76,18 +70,14 @@ func (h *HandlerService) GetUserURLs(ctx context.Context, req *pb.GetUserURLsReq
 	// Получаем userID из контекста
 	userID, ok := ctx.Value(UserIDKey).(string)
 	if !ok {
-		// Обработка случая, если идентификатор пользователя отсутствует в контексте
-		// Например, возвращаем ошибку или принимаем решение по умолчанию
 		return nil, errors.New("user ID not found in context")
 	}
 
-	// Получаем URL пользователей из провайдера
 	userURLs, err := h.provider.GetUserURLs(ctx, h.cfg.BaseShortURL, userID)
 	if err != nil {
 		return nil, status.Errorf(codes.Internal, "failed to get links from db")
 	}
 
-	// Преобразуем URL пользователей в формат protobuf
 	var pbUserURLs []*pb.URLs
 	for _, u := range userURLs {
 		url := &pb.URLs{
@@ -97,7 +87,6 @@ func (h *HandlerService) GetUserURLs(ctx context.Context, req *pb.GetUserURLsReq
 		pbUserURLs = append(pbUserURLs, url)
 	}
 
-	// Создаем ответ
 	response := &pb.GetUserURLsResponse{
 		Urls: pbUserURLs,
 	}

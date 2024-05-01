@@ -4,7 +4,7 @@ import (
 	"net"
 
 	"github.com/zYoma/go-url-shortener/internal/config"
-	"github.com/zYoma/go-url-shortener/internal/handlers/grpc_handlers"
+	grpchandlers "github.com/zYoma/go-url-shortener/internal/handlers/grpc_handlers"
 	"github.com/zYoma/go-url-shortener/internal/storage"
 	pb "github.com/zYoma/go-url-shortener/proto"
 	"google.golang.org/grpc"
@@ -12,11 +12,11 @@ import (
 
 type GRPCServer struct {
 	server  *grpc.Server
-	service *grpc_handlers.HandlerService
+	service *grpchandlers.HandlerService
 }
 
 func NewGRPC(cfg *config.Config, provider storage.URLProvider) *GRPCServer {
-	service := grpc_handlers.New(provider, cfg)
+	service := grpchandlers.New(provider, cfg)
 	return &GRPCServer{service: service}
 }
 
@@ -32,7 +32,7 @@ func (a *GRPCServer) Run() error {
 		return err
 	}
 	srv := grpc.NewServer(
-		grpc.UnaryInterceptor(grpc_handlers.AuthMiddleware),
+		grpc.UnaryInterceptor(grpchandlers.AuthMiddleware),
 	)
 	a.server = srv
 
