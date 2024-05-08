@@ -157,3 +157,9 @@ func (s *Storage) DeleteListURL(ctx context.Context, messages []models.UserListU
 	// аналогично
 	return nil
 }
+
+// GetServiceStats получает статистику сервиса.
+func (s *Storage) GetServiceStats(ctx context.Context) (models.ServiceStat, error) {
+	// в mem реализации у меня нет разбиение ссылок по пользователям, поэтому захардкодил
+	return models.ServiceStat{URLS: len(s.db), Users: 10}, nil
+}

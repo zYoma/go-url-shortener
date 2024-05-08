@@ -20,8 +20,9 @@ import (
 // его зависимости для удобного управления.
 type App struct {
 	// Server - это HTTP-сервер приложения, который обрабатывает входящие запросы.
-	Server   *server.HTTPServer
-	stopChan chan int64
+	Server     *server.HTTPServer
+	stopChan   chan int64
+	GRPCServer *server.GRPCServer
 }
 
 // ErrServerStoped описывает ошибку, возникающую при остановке сервера.
@@ -49,9 +50,10 @@ func New(cfg *config.Config) (*App, error) {
 	stopChan := make(chan int64, 1)
 
 	// создаем сервер
-	server := server.New(provider, cfg, stopChan)
+	httpServer := server.New(provider, cfg, stopChan)
+	grpcServer := server.NewGRPC(cfg, provider)
 
-	return &App{Server: server, stopChan: stopChan}, nil
+	return &App{Server: httpServer, stopChan: stopChan, GRPCServer: grpcServer}, nil
 }
 
 // Run запускает приложение, включая HTTP-сервер и обработку сигналов
@@ -75,6 +77,13 @@ func (s *App) Run() error {
 		}
 	}()
 
+	// Запускаем gRPC сервер в отдельной горутине
+	go func() {
+		if err := s.GRPCServer.Run(); err != nil {
+			errChan <- err
+		}
+	}()
+
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
@@ -86,6 +95,7 @@ func (s *App) Run() error {
 		if err := s.Server.Shutdown(ctx); err != nil {
 			return err
 		}
+		s.GRPCServer.Stop()
 		return ErrServerStoped
 	case err := <-errChan:
 		return err

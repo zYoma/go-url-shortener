@@ -17,6 +17,7 @@ var flagHTTPS bool
 var flagCertPath string
 var flagCertKeyPath string
 var flagConfigFile string
+var flagTrustedSubnet string
 
 const (
 	envServerAddress = "SERVER_ADDRESS"
@@ -29,19 +30,21 @@ const (
 	envCertPath      = "CERT_PATH"
 	envCertKeyPath   = "CERT_KEY_PATH"
 	envConfigFile    = "CONFIG"
+	envTrustedSubnet = "TRUSTED_SUBNET"
 )
 
 // Config определяет конфигурацию приложения, собираемую из аргументов командной строки и переменных окружения.
 type Config struct {
-	RunAddr      string // Адрес и порт для запуска сервера.
-	BaseShortURL string // Базовый URL для коротких ссылок.
-	LogLevel     string // Уровень логирования.
-	StorageFile  string // Имя файла для хранения данных.
-	DSN          string // Data Source Name для подключения к БД.
-	TokenSecret  string // Секрет для подписи JWT токенов.
-	EnableHTTPS  bool   // Включить HTTPS
-	CertPath     string // путь до файла с сертификатом
-	CertKeyPath  string // путь до ключа
+	RunAddr       string // Адрес и порт для запуска сервера.
+	BaseShortURL  string // Базовый URL для коротких ссылок.
+	LogLevel      string // Уровень логирования.
+	StorageFile   string // Имя файла для хранения данных.
+	DSN           string // Data Source Name для подключения к БД.
+	TokenSecret   string // Секрет для подписи JWT токенов.
+	EnableHTTPS   bool   // Включить HTTPS
+	CertPath      string // путь до файла с сертификатом
+	CertKeyPath   string // путь до ключа
+	TrustedSubnet string // разрешенная подсеть
 }
 
 type fileConfig struct {
@@ -54,6 +57,7 @@ type fileConfig struct {
 	EnableHTTPS     bool   `json:"enable_https"`
 	CertPath        string `json:"cert_path"`
 	CertKeyPath     string `json:"cert_key_path"`
+	TrustedSubnet   string `json:"trusted_subnet"`
 }
 
 func parseConfigFile(filePath string) (*fileConfig, error) {
@@ -88,6 +92,7 @@ func GetConfig() (*Config, error) {
 	flag.StringVar(&flagCertPath, "cr", "", "path to cert")
 	flag.StringVar(&flagCertKeyPath, "ck", "", "path to cert key")
 	flag.StringVar(&flagConfigFile, "c", "config.json", "path to config file")
+	flag.StringVar(&flagTrustedSubnet, "t", "", "trusted subnet")
 	flag.Parse()
 
 	// если есть переменные окружения, используем их значения
@@ -120,6 +125,10 @@ func GetConfig() (*Config, error) {
 		flagCertKeyPath = envCertKey
 	}
 
+	if envSubnet := os.Getenv(envTrustedSubnet); envSubnet != "" {
+		flagTrustedSubnet = envSubnet
+	}
+
 	confFromFile, err := parseConfigFile(flagConfigFile)
 	if err != nil {
 		return nil, err
@@ -135,18 +144,20 @@ func GetConfig() (*Config, error) {
 		setValueFromFileConfig(&flagHTTPS, confFromFile.EnableHTTPS)
 		setValueFromFileConfig(&flagCertPath, confFromFile.CertPath)
 		setValueFromFileConfig(&flagCertKeyPath, confFromFile.CertKeyPath)
+		setValueFromFileConfig(&flagTrustedSubnet, confFromFile.TrustedSubnet)
 	}
 
 	return &Config{
-		RunAddr:      flagRunAddr,
-		BaseShortURL: flagBaseShortURL,
-		LogLevel:     flagLogLevel,
-		StorageFile:  flagStorageFileNmae,
-		DSN:          flagDSN,
-		TokenSecret:  flagTokenSecret,
-		EnableHTTPS:  flagHTTPS,
-		CertPath:     flagCertPath,
-		CertKeyPath:  flagCertKeyPath,
+		RunAddr:       flagRunAddr,
+		BaseShortURL:  flagBaseShortURL,
+		LogLevel:      flagLogLevel,
+		StorageFile:   flagStorageFileNmae,
+		DSN:           flagDSN,
+		TokenSecret:   flagTokenSecret,
+		EnableHTTPS:   flagHTTPS,
+		CertPath:      flagCertPath,
+		CertKeyPath:   flagCertKeyPath,
+		TrustedSubnet: flagTrustedSubnet,
 	}, nil
 }
 

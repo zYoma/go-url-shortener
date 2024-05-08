@@ -7,5 +7,6 @@
     "token_secret": "secret_for_test_only",
     "enable_https": false ,
     "cert_path": "certs/cert.pem",
-    "cert_key_path": "certs/key.pem"
+    "cert_key_path": "certs/key.pem",
+    "trusted_subnet": "127.0.0.1/24"
 }

@@ -41,4 +41,7 @@ type URLProvider interface {
 
 	// DeleteListURL удаляет список URL, ассоциированных с идентификаторами пользователей.
 	DeleteListURL(ctx context.Context, messages []models.UserListURLForDelete) error
+
+	// GetServiceStats получает статистику сервиса.
+	GetServiceStats(ctx context.Context) (models.ServiceStat, error)
 }
