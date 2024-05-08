@@ -8,6 +8,7 @@ import (
 	"github.com/zYoma/go-url-shortener/internal/storage"
 	pb "github.com/zYoma/go-url-shortener/proto"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 type GRPCServer struct {
@@ -37,6 +38,7 @@ func (a *GRPCServer) Run() error {
 	a.server = srv
 
 	pb.RegisterShortenerServer(srv, a.service)
+	reflection.Register(srv)
 
 	if err := a.server.Serve(listen); err != nil {
 		return err

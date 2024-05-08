@@ -14,6 +14,7 @@ import (
 	pb "github.com/zYoma/go-url-shortener/proto"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 type HandlerService struct {
@@ -94,7 +95,7 @@ func (h *HandlerService) GetUserURLs(ctx context.Context, req *pb.GetUserURLsReq
 	return response, nil
 }
 
-func (h *HandlerService) Ping(ctx context.Context, req *pb.PingRequest) (*pb.PingResponse, error) {
+func (h *HandlerService) Ping(ctx context.Context, req *emptypb.Empty) (*pb.PingResponse, error) {
 	err := h.provider.Ping(ctx)
 	if err != nil {
 		return nil, err

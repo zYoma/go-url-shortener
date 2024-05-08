@@ -11,6 +11,7 @@ import (
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 )
 
 // This is a compile-time assertion to ensure that this generated file
@@ -30,7 +31,7 @@ const (
 type ShortenerClient interface {
 	CreateShortURL(ctx context.Context, in *CreateShortURLRequest, opts ...grpc.CallOption) (*CreateShortURLResponse, error)
 	GetUserURLs(ctx context.Context, in *GetUserURLsRequest, opts ...grpc.CallOption) (*GetUserURLsResponse, error)
-	Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error)
+	Ping(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PingResponse, error)
 }
 
 type shortenerClient struct {
@@ -59,7 +60,7 @@ func (c *shortenerClient) GetUserURLs(ctx context.Context, in *GetUserURLsReques
 	return out, nil
 }
 
-func (c *shortenerClient) Ping(ctx context.Context, in *PingRequest, opts ...grpc.CallOption) (*PingResponse, error) {
+func (c *shortenerClient) Ping(ctx context.Context, in *emptypb.Empty, opts ...grpc.CallOption) (*PingResponse, error) {
 	out := new(PingResponse)
 	err := c.cc.Invoke(ctx, Shortener_Ping_FullMethodName, in, out, opts...)
 	if err != nil {
@@ -74,7 +75,7 @@ func (c *shortenerClient) Ping(ctx context.Context, in *PingRequest, opts ...grp
 type ShortenerServer interface {
 	CreateShortURL(context.Context, *CreateShortURLRequest) (*CreateShortURLResponse, error)
 	GetUserURLs(context.Context, *GetUserURLsRequest) (*GetUserURLsResponse, error)
-	Ping(context.Context, *PingRequest) (*PingResponse, error)
+	Ping(context.Context, *emptypb.Empty) (*PingResponse, error)
 	mustEmbedUnimplementedShortenerServer()
 }
 
@@ -88,7 +89,7 @@ func (UnimplementedShortenerServer) CreateShortURL(context.Context, *CreateShort
 func (UnimplementedShortenerServer) GetUserURLs(context.Context, *GetUserURLsRequest) (*GetUserURLsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUserURLs not implemented")
 }
-func (UnimplementedShortenerServer) Ping(context.Context, *PingRequest) (*PingResponse, error) {
+func (UnimplementedShortenerServer) Ping(context.Context, *emptypb.Empty) (*PingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
 func (UnimplementedShortenerServer) mustEmbedUnimplementedShortenerServer() {}
@@ -141,7 +142,7 @@ func _Shortener_GetUserURLs_Handler(srv interface{}, ctx context.Context, dec fu
 }
 
 func _Shortener_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PingRequest)
+	in := new(emptypb.Empty)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -153,7 +154,7 @@ func _Shortener_Ping_Handler(srv interface{}, ctx context.Context, dec func(inte
 		FullMethod: Shortener_Ping_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(ShortenerServer).Ping(ctx, req.(*PingRequest))
+		return srv.(ShortenerServer).Ping(ctx, req.(*emptypb.Empty))
 	}
 	return interceptor(ctx, in, info, handler)
 }
